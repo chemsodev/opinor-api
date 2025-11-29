@@ -1,0 +1,1104 @@
+{
+  "info": {
+    "_postman_id": "opinor-api-collection",
+    "name": "Opinor API",
+    "description": "Opinor - Feedback/Review System for Businesses\n\n## Overview\nThis API allows businesses to collect and manage customer feedback through QR codes.\n\n## Authentication\n- Uses JWT Bearer tokens\n- Access token expires in 15 minutes\n- Refresh token expires in 7 days\n\n## Test Accounts\n| Role | Email | Password |\n|------|-------|----------|\n| Admin | admin@opinor.com | Admin@123 |\n| User | demo@restaurant.com | Demo@123 |",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000/api/v1",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refreshToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "adminAccessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "adminRefreshToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "businessCode",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "joinRequestId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "invitationCode",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "feedbackId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth - User",
+      "description": "Authentication endpoints for business owners",
+      "item": [
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('accessToken', response.data.accessToken);",
+                  "    pm.collectionVariables.set('refreshToken', response.data.refreshToken);",
+                  "    pm.collectionVariables.set('businessCode', response.data.user.uniqueCode);",
+                  "    ",
+                  "    pm.test('Login successful', function() {",
+                  "        pm.expect(response.success).to.be.true;",
+                  "        pm.expect(response.data.accessToken).to.be.a('string');",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"demo@restaurant.com\",\n  \"password\": \"Demo@123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Login for business owners. Returns access and refresh tokens."
+          },
+          "response": []
+        },
+        {
+          "name": "Register (with invitation code)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('accessToken', response.data.accessToken);",
+                  "    pm.collectionVariables.set('refreshToken', response.data.refreshToken);",
+                  "    pm.collectionVariables.set('businessCode', response.data.user.uniqueCode);",
+                  "    ",
+                  "    pm.test('Registration successful', function() {",
+                  "        pm.expect(response.success).to.be.true;",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"{{invitationCode}}\",\n  \"email\": \"newbusiness@test.com\",\n  \"password\": \"NewBiz@123\",\n  \"businessName\": \"New Business\",\n  \"businessType\": \"RESTAURANT\",\n  \"phone\": \"+1234567890\",\n  \"address\": \"123 New Street\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "register"]
+            },
+            "description": "Complete registration using an approved invitation code."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Current User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Get user profile', function() {",
+                  "    pm.expect(pm.response.code).to.equal(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "me"]
+            },
+            "description": "Get current authenticated user profile."
+          },
+          "response": []
+        },
+        {
+          "name": "Refresh Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('accessToken', response.data.accessToken);",
+                  "    pm.collectionVariables.set('refreshToken', response.data.refreshToken);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/refresh",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "refresh"]
+            },
+            "description": "Refresh access token using refresh token."
+          },
+          "response": []
+        },
+        {
+          "name": "Forgot Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"demo@restaurant.com\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/forgot-password",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "forgot-password"]
+            },
+            "description": "Request password reset email."
+          },
+          "response": []
+        },
+        {
+          "name": "Reset Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"reset-token-from-email\",\n  \"newPassword\": \"NewPassword@123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/reset-password",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "reset-password"]
+            },
+            "description": "Reset password using token from email."
+          },
+          "response": []
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/logout",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "logout"]
+            },
+            "description": "Logout and invalidate refresh token."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Auth - Admin",
+      "description": "Authentication endpoints for administrators",
+      "item": [
+        {
+          "name": "Admin Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('adminAccessToken', response.data.accessToken);",
+                  "    pm.collectionVariables.set('adminRefreshToken', response.data.refreshToken);",
+                  "    ",
+                  "    pm.test('Admin login successful', function() {",
+                  "        pm.expect(response.success).to.be.true;",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@opinor.com\",\n  \"password\": \"Admin@123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/admin/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "admin", "login"]
+            },
+            "description": "Login for administrators."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Current Admin",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminAccessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/admin/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "admin", "me"]
+            },
+            "description": "Get current admin profile."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Join Requests",
+      "description": "Business registration requests",
+      "item": [
+        {
+          "name": "Submit Join Request (Public)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('joinRequestId', response.data.id);",
+                  "    pm.collectionVariables.set('invitationCode', response.data.generatedCode);",
+                  "    ",
+                  "    pm.test('Join request created', function() {",
+                  "        pm.expect(response.success).to.be.true;",
+                  "        pm.expect(response.data.status).to.equal('PENDING');",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"newbusiness@test.com\",\n  \"businessName\": \"Beach Paradise\",\n  \"businessType\": \"BEACH\",\n  \"phone\": \"+1987654321\",\n  \"address\": \"456 Ocean Drive\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/join-requests",
+              "host": ["{{baseUrl}}"],
+              "path": ["join-requests"]
+            },
+            "description": "Submit a new join request. No authentication required.\n\nBusiness types: RESTAURANT, BEACH, CLINIC, OTHER"
+          },
+          "response": []
+        },
+        {
+          "name": "Verify Invitation Code (Public)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Code verification', function() {",
+                  "    pm.expect(pm.response.code).to.equal(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/join-requests/{{invitationCode}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["join-requests", "{{invitationCode}}"]
+            },
+            "description": "Verify if an invitation code is valid."
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Join Requests (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminAccessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/join-requests?status=PENDING",
+              "host": ["{{baseUrl}}"],
+              "path": ["join-requests"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "PENDING",
+                  "description": "Filter by status: PENDING, APPROVED, REJECTED"
+                }
+              ]
+            },
+            "description": "Get all join requests. Admin only."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Join Request by ID (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminAccessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/join-requests/{{joinRequestId}}/detail",
+              "host": ["{{baseUrl}}"],
+              "path": ["join-requests", "{{joinRequestId}}", "detail"]
+            },
+            "description": "Get join request details by ID. Admin only."
+          },
+          "response": []
+        },
+        {
+          "name": "Approve Join Request (Admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Request approved', function() {",
+                  "    if (pm.response.code === 200) {",
+                  "        const response = pm.response.json();",
+                  "        pm.expect(response.data.status).to.equal('APPROVED');",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminAccessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"APPROVED\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/join-requests/{{joinRequestId}}/review",
+              "host": ["{{baseUrl}}"],
+              "path": ["join-requests", "{{joinRequestId}}", "review"]
+            },
+            "description": "Approve a pending join request. Admin only."
+          },
+          "response": []
+        },
+        {
+          "name": "Reject Join Request (Admin)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminAccessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"REJECTED\",\n  \"rejectionReason\": \"Incomplete documentation\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/join-requests/{{joinRequestId}}/review",
+              "host": ["{{baseUrl}}"],
+              "path": ["join-requests", "{{joinRequestId}}", "review"]
+            },
+            "description": "Reject a pending join request. Admin only."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Feedbacks - Public",
+      "description": "Public feedback endpoints (no auth required)",
+      "item": [
+        {
+          "name": "Submit Feedback",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('feedbackId', response.data.id);",
+                  "    ",
+                  "    pm.test('Feedback submitted', function() {",
+                  "        pm.expect(response.success).to.be.true;",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rating\": 5,\n  \"comment\": \"Excellent service and amazing food! Highly recommended.\",\n  \"customerName\": \"John Doe\",\n  \"customerEmail\": \"john@example.com\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/feedbacks/{{businessCode}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["feedbacks", "{{businessCode}}"]
+            },
+            "description": "Submit feedback for a business. No auth required.\n\n⚠️ Rate limited: 1 feedback per IP per business per 24 hours.\n\nRating: 1-5 stars"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Public Stats",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Stats retrieved', function() {",
+                  "    pm.expect(pm.response.code).to.equal(200);",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.data).to.have.property('averageRating');",
+                  "    pm.expect(response.data).to.have.property('totalReviews');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/feedbacks/business/{{businessCode}}/stats",
+              "host": ["{{baseUrl}}"],
+              "path": ["feedbacks", "business", "{{businessCode}}", "stats"]
+            },
+            "description": "Get public statistics for a business (average rating, total reviews, distribution)."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Feedbacks - Business Owner",
+      "description": "Feedback management for authenticated business owners",
+      "item": [
+        {
+          "name": "Get My Feedbacks",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/feedbacks?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["feedbacks"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "rating",
+                  "value": "5",
+                  "disabled": true,
+                  "description": "Filter by rating (1-5)"
+                }
+              ]
+            },
+            "description": "Get paginated feedbacks for your business."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Feedback by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/feedbacks/{{feedbackId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["feedbacks", "{{feedbackId}}"]
+            },
+            "description": "Get a specific feedback by ID."
+          },
+          "response": []
+        },
+        {
+          "name": "Get My Stats",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/feedbacks/stats",
+              "host": ["{{baseUrl}}"],
+              "path": ["feedbacks", "stats"]
+            },
+            "description": "Get detailed statistics for your business including trends."
+          },
+          "response": []
+        },
+        {
+          "name": "Hide Feedback (Soft Delete)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/feedbacks/{{feedbackId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["feedbacks", "{{feedbackId}}"]
+            },
+            "description": "Hide a feedback (soft delete). It won't appear in public stats."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "description": "User profile management",
+      "item": [
+        {
+          "name": "Get Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "profile"]
+            },
+            "description": "Get current user's profile."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"businessName\": \"Updated Restaurant Name\",\n  \"phone\": \"+1111111111\",\n  \"address\": \"789 New Address\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "profile"]
+            },
+            "description": "Update current user's profile."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "🧪 Test Flows",
+      "description": "Pre-configured test scenarios",
+      "item": [
+        {
+          "name": "Flow 1: Complete Registration",
+          "description": "Run these requests in order to test the full registration flow",
+          "item": [
+            {
+              "name": "1. Submit Join Request",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "const response = pm.response.json();",
+                      "pm.collectionVariables.set('joinRequestId', response.data.id);",
+                      "pm.collectionVariables.set('invitationCode', response.data.generatedCode);",
+                      "pm.collectionVariables.set('testEmail', 'test' + Date.now() + '@example.com');",
+                      "",
+                      "pm.test('Join request created', function() {",
+                      "    pm.expect(pm.response.code).to.equal(201);",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                },
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "exec": [
+                      "pm.collectionVariables.set('testEmail', 'test' + Date.now() + '@example.com');"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"{{testEmail}}\",\n  \"businessName\": \"Test Business {{$timestamp}}\",\n  \"businessType\": \"RESTAURANT\",\n  \"phone\": \"+1234567890\",\n  \"address\": \"123 Test Street\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/join-requests",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["join-requests"]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "2. Admin Login",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "const response = pm.response.json();",
+                      "pm.collectionVariables.set('adminAccessToken', response.data.accessToken);",
+                      "",
+                      "pm.test('Admin logged in', function() {",
+                      "    pm.expect(pm.response.code).to.equal(200);",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"admin@opinor.com\",\n  \"password\": \"Admin@123\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/auth/admin/login",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["auth", "admin", "login"]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "3. Approve Join Request",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('Request approved', function() {",
+                      "    pm.expect(pm.response.code).to.equal(200);",
+                      "    const response = pm.response.json();",
+                      "    pm.expect(response.data.status).to.equal('APPROVED');",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{adminAccessToken}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"status\": \"APPROVED\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/join-requests/{{joinRequestId}}/review",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["join-requests", "{{joinRequestId}}", "review"]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "4. Complete Registration",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "const response = pm.response.json();",
+                      "pm.collectionVariables.set('accessToken', response.data.accessToken);",
+                      "pm.collectionVariables.set('businessCode', response.data.user.uniqueCode);",
+                      "",
+                      "pm.test('Registration complete', function() {",
+                      "    pm.expect(pm.response.code).to.equal(201);",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"code\": \"{{invitationCode}}\",\n  \"email\": \"{{testEmail}}\",\n  \"password\": \"TestBiz@123\",\n  \"businessName\": \"Test Business\",\n  \"businessType\": \"RESTAURANT\",\n  \"phone\": \"+1234567890\",\n  \"address\": \"123 Test Street\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/auth/register",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["auth", "register"]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "5. Verify User Profile",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('Profile retrieved', function() {",
+                      "    pm.expect(pm.response.code).to.equal(200);",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/auth/me",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["auth", "me"]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Flow 2: Feedback Cycle",
+          "description": "Test submitting and viewing feedbacks",
+          "item": [
+            {
+              "name": "1. User Login",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "const response = pm.response.json();",
+                      "pm.collectionVariables.set('accessToken', response.data.accessToken);",
+                      "pm.collectionVariables.set('businessCode', response.data.user.uniqueCode);"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"demo@restaurant.com\",\n  \"password\": \"Demo@123\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/auth/login",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["auth", "login"]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "2. Submit 5-Star Feedback",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "const response = pm.response.json();",
+                      "pm.collectionVariables.set('feedbackId', response.data.id);"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"rating\": 5,\n  \"comment\": \"Absolutely amazing! Best experience ever.\",\n  \"customerName\": \"Happy Customer\",\n  \"customerEmail\": \"happy@customer.com\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/feedbacks/{{businessCode}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["feedbacks", "{{businessCode}}"]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "3. Get Public Stats",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/feedbacks/business/{{businessCode}}/stats",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["feedbacks", "business", "{{businessCode}}", "stats"]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "4. View My Feedbacks",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/feedbacks",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["feedbacks"]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "5. View My Detailed Stats",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{accessToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/feedbacks/stats",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["feedbacks", "stats"]
+                }
+              },
+              "response": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
