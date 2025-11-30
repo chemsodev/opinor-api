@@ -10,22 +10,29 @@ export class MailService {
 
   constructor(private configService: ConfigService) {
     const mailHost = this.configService.get('mail.host');
-    const mailPort = this.configService.get('mail.port');
+    const mailPort = this.configService.get('mail.port') || 465;
     const mailUser = this.configService.get('mail.user');
     const mailPass = this.configService.get('mail.password');
 
+    // Use secure connection (SSL) for port 465, TLS for 587
+    const isSecure = mailPort === 465;
+
     this.logger.log(
-      `Mail config: host=${mailHost}, port=${mailPort}, user=${mailUser ? mailUser.substring(0, 5) + '***' : 'NOT SET'}`,
+      `Mail config: host=${mailHost}, port=${mailPort}, secure=${isSecure}, user=${mailUser ? mailUser.substring(0, 5) + '***' : 'NOT SET'}`,
     );
 
     this.transporter = nodemailer.createTransport({
       host: mailHost,
       port: mailPort,
-      secure: false,
+      secure: isSecure,
       auth: {
         user: mailUser,
         pass: mailPass,
       },
+      // Add timeout to prevent hanging
+      connectionTimeout: 10000,
+      greetingTimeout: 10000,
+      socketTimeout: 10000,
     });
   }
 
