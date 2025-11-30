@@ -35,6 +35,7 @@ import { MailModule } from './modules/mail/mail.module';
         entities: configService.get('database.entities'),
         synchronize: configService.get('database.synchronize'),
         logging: configService.get('database.logging'),
+        ssl: configService.get('database.ssl'),
       }),
       inject: [ConfigService],
     }),
