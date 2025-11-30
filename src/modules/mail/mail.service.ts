@@ -9,13 +9,22 @@ export class MailService {
   private transporter: Transporter;
 
   constructor(private configService: ConfigService) {
+    const mailHost = this.configService.get('mail.host');
+    const mailPort = this.configService.get('mail.port');
+    const mailUser = this.configService.get('mail.user');
+    const mailPass = this.configService.get('mail.password');
+
+    this.logger.log(
+      `Mail config: host=${mailHost}, port=${mailPort}, user=${mailUser ? mailUser.substring(0, 5) + '***' : 'NOT SET'}`,
+    );
+
     this.transporter = nodemailer.createTransport({
-      host: this.configService.get('mail.host'),
-      port: this.configService.get('mail.port'),
+      host: mailHost,
+      port: mailPort,
       secure: false,
       auth: {
-        user: this.configService.get('mail.user'),
-        pass: this.configService.get('mail.password'),
+        user: mailUser,
+        pass: mailPass,
       },
     });
   }
@@ -26,15 +35,18 @@ export class MailService {
     html: string,
   ): Promise<void> {
     try {
-      await this.transporter.sendMail({
+      this.logger.log(`Attempting to send email to ${to}...`);
+      const info = await this.transporter.sendMail({
         from: this.configService.get('mail.from'),
         to,
         subject,
         html,
       });
-      this.logger.log(`Email sent to ${to}: ${subject}`);
+      this.logger.log(
+        `Email sent to ${to}: ${subject} (messageId: ${info.messageId})`,
+      );
     } catch (error) {
-      this.logger.error(`Failed to send email to ${to}`, error);
+      this.logger.error(`Failed to send email to ${to}: ${error.message}`);
       throw error;
     }
   }
