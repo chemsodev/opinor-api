@@ -210,11 +210,7 @@ export class AuthService {
   async forgotPassword(forgotPasswordDto: ForgotPasswordDto) {
     const user = await this.usersService.findByEmail(forgotPasswordDto.email);
     if (!user) {
-      // Don't reveal if email exists
-      return {
-        message:
-          'If your email is registered, you will receive a password reset link',
-      };
+      throw new BadRequestException('No account found with this email address');
     }
 
     const resetToken = uuidv4();
@@ -234,8 +230,7 @@ export class AuthService {
     console.log(`[DEV] Password reset token for ${user.email}: ${resetToken}`);
 
     return {
-      message:
-        'If your email is registered, you will receive a password reset link',
+      message: 'Password reset link has been sent to your email',
     };
   }
 
