@@ -65,7 +65,6 @@ Most endpoints require a Bearer token. Login with your credentials to get an acc
 #### For Business Owners:
 - 📝 **Anonymous Feedback**: Customers submit feedback via QR code
 - 📊 **Dashboard**: Real-time statistics and achievement tracking
-- 📈 **Reports**: Detailed analytics and exportable reports (PDF/CSV)
 - 🔔 **Notifications**: Auto-alerts for new feedbacks, performance changes, admin replies
 - 📱 **QR Code**: View QR code and track scans (read-only)
 - 🔒 **Password Management**: Change password securely (admin notified)
