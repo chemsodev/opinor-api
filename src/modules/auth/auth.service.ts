@@ -17,6 +17,7 @@ import {
   RegisterDto,
   ForgotPasswordDto,
   ResetPasswordDto,
+  ChangePasswordDto,
 } from './dto';
 import { JoinRequestStatus } from '../../database/entities';
 
@@ -47,6 +48,14 @@ export class AuthService {
 
     if (!user.isActive) {
       throw new UnauthorizedException('Account is not active');
+    }
+
+    // Check if user is blocked (payment issue)
+    if (user.isBlocked) {
+      throw new UnauthorizedException(
+        user.blockedReason ||
+          'Your account has been blocked. Please contact support or complete your payment.',
+      );
     }
 
     const tokens = await this.generateTokens(user.id, user.email, 'user');
@@ -285,6 +294,46 @@ export class AuthService {
       await this.adminService.updateRefreshToken(userId, null);
     }
     return { message: 'Logged out successfully' };
+  }
+
+  async changePassword(userId: string, changePasswordDto: ChangePasswordDto) {
+    const { currentPassword, newPassword, confirmPassword } = changePasswordDto;
+
+    // Check if new passwords match
+    if (newPassword !== confirmPassword) {
+      throw new BadRequestException('New passwords do not match');
+    }
+
+    // Get user
+    const user = await this.usersService.findById(userId);
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+
+    // Verify current password
+    const isPasswordValid = await bcrypt.compare(
+      currentPassword,
+      user.password,
+    );
+    if (!isPasswordValid) {
+      throw new BadRequestException('Current password is incorrect');
+    }
+
+    // Check if new password is same as current
+    if (currentPassword === newPassword) {
+      throw new BadRequestException(
+        'New password must be different from current password',
+      );
+    }
+
+    // Hash and update password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await this.usersService.updatePassword(userId, hashedPassword);
+
+    return {
+      success: true,
+      message: 'Password changed successfully',
+    };
   }
 
   private async generateTokens(

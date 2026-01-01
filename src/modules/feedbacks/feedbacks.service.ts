@@ -14,6 +14,7 @@ import {
 } from '../../database/entities';
 import { CreateFeedbackDto, FeedbackQueryDto } from './dto';
 import { UsersService } from '../users/users.service';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class FeedbacksService {
@@ -21,6 +22,7 @@ export class FeedbacksService {
     @InjectRepository(Feedback)
     private readonly feedbackRepository: Repository<Feedback>,
     private readonly usersService: UsersService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   async create(
@@ -72,7 +74,17 @@ export class FeedbacksService {
       status: FeedbackStatus.NEW,
     });
 
-    return this.feedbackRepository.save(feedback);
+    const savedFeedback = await this.feedbackRepository.save(feedback);
+
+    // Create notification for the business owner
+    await this.notificationsService.notifyNewFeedback(
+      business.id,
+      savedFeedback.id,
+      rating,
+      sentiment,
+    );
+
+    return savedFeedback;
   }
 
   async findAllForBusiness(businessId: string, queryDto: FeedbackQueryDto) {

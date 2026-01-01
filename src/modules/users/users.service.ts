@@ -237,6 +237,60 @@ export class UsersService {
     };
   }
 
+  async updatePassword(userId: string, hashedPassword: string): Promise<void> {
+    await this.userRepository.update(userId, { password: hashedPassword });
+  }
+
+  async blockUser(userId: string, reason?: string): Promise<User> {
+    const user = await this.findById(userId);
+    user.isBlocked = true;
+    user.blockedReason = reason || 'Payment required';
+    user.blockedAt = new Date();
+    return this.userRepository.save(user);
+  }
+
+  async unblockUser(userId: string): Promise<User> {
+    const user = await this.findById(userId);
+    user.isBlocked = false;
+    user.blockedReason = null;
+    user.blockedAt = null;
+    return this.userRepository.save(user);
+  }
+
+  async findAll(page = 1, limit = 20) {
+    const [users, total] = await this.userRepository.findAndCount({
+      skip: (page - 1) * limit,
+      take: limit,
+      order: { createdAt: 'DESC' },
+      select: [
+        'id',
+        'email',
+        'firstName',
+        'lastName',
+        'businessName',
+        'businessType',
+        'isActive',
+        'isBlocked',
+        'blockedReason',
+        'blockedAt',
+        'createdAt',
+      ],
+    });
+
+    return {
+      success: true,
+      data: {
+        users,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+        },
+      },
+    };
+  }
+
   private generateUniqueCode(): string {
     return uuidv4().replace(/-/g, '').substring(0, 8).toUpperCase();
   }

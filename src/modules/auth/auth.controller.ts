@@ -20,6 +20,7 @@ import {
   ForgotPasswordDto,
   ResetPasswordDto,
   RegisterDto,
+  ChangePasswordDto,
 } from './dto';
 import { JwtAuthGuard, AdminJwtAuthGuard } from './guards';
 import { CurrentUser, Public } from '../../common/decorators';
@@ -125,5 +126,25 @@ export class AuthController {
   @ApiResponse({ status: 200, description: 'Logout successful' })
   async logout(@CurrentUser() user: any) {
     return this.authService.logout(user.id, user.type);
+  }
+
+  @Post('change-password')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Change password',
+    description: 'Change the current user password',
+  })
+  @ApiResponse({ status: 200, description: 'Password changed successfully' })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid current password or passwords do not match',
+  })
+  async changePassword(
+    @CurrentUser() user: any,
+    @Body() changePasswordDto: ChangePasswordDto,
+  ) {
+    return this.authService.changePassword(user.id, changePasswordDto);
   }
 }

@@ -91,6 +91,15 @@ export class User {
   @Column({ name: 'is_active', default: false })
   isActive: boolean;
 
+  @Column({ name: 'is_blocked', default: false })
+  isBlocked: boolean;
+
+  @Column({ name: 'blocked_reason', nullable: true })
+  blockedReason: string;
+
+  @Column({ name: 'blocked_at', type: 'timestamp', nullable: true })
+  blockedAt: Date;
+
   @Column({ name: 'is_email_verified', default: false })
   isEmailVerified: boolean;
 
