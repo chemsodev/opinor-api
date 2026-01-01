@@ -58,6 +58,8 @@ export enum NotificationType {
   TRIAL_ENDING = 'trial_ending', // Trial period ending
   ACCOUNT_BLOCKED = 'account_blocked', // Account blocked by admin
   ACCOUNT_UNBLOCKED = 'account_unblocked', // Account unblocked by admin
+  PASSWORD_CHANGED = 'password_changed', // Password changed successfully
+  ADMIN_REPLY = 'admin_reply', // Admin replied to feedback
 
   // Additional Notifications (À la carte)
   // 🟠 Performance notifications

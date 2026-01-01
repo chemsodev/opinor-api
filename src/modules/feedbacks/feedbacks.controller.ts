@@ -111,24 +111,6 @@ export class FeedbacksController {
     return this.feedbacksService.findByIdFormatted(id, user.id);
   }
 
-  @Post(':id/response')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Submit response to a feedback' })
-  @ApiResponse({ status: 200, description: 'Response submitted successfully' })
-  @ApiResponse({ status: 404, description: 'Feedback not found' })
-  async respondToFeedback(
-    @Param('id') id: string,
-    @CurrentUser() user: User,
-    @Body() respondDto: RespondToFeedbackDto,
-  ) {
-    return this.feedbacksService.respondToFeedback(
-      id,
-      user.id,
-      respondDto.text,
-    );
-  }
-
   @Patch(':id/status')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
@@ -140,16 +122,5 @@ export class FeedbacksController {
     @Body('status') status: string,
   ) {
     return this.feedbacksService.updateStatus(id, user.id, status);
-  }
-
-  @Delete(':id')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Hide a feedback (soft delete)' })
-  @ApiResponse({ status: 200, description: 'Feedback hidden successfully' })
-  @ApiResponse({ status: 404, description: 'Feedback not found' })
-  async hide(@Param('id') id: string, @CurrentUser() user: User) {
-    await this.feedbacksService.hideFeedback(id, user.id);
-    return { success: true, message: 'Feedback hidden successfully' };
   }
 }

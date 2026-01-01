@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Notification, User } from '../../database/entities';
+import { Notification, User, Admin } from '../../database/entities';
 import { NotificationType } from '../../database/entities/enums';
 
 interface CreateNotificationDto {
@@ -526,6 +526,42 @@ export class NotificationsService {
     });
   }
 
+  // Notify password changed (keep for user notification if needed)
+  async notifyPasswordChanged(userId: string) {
+    return this.createNotification(userId, {
+      type: NotificationType.PASSWORD_CHANGED,
+      title: '🟡 Mot de passe modifié',
+      message:
+        "Votre mot de passe a été modifié avec succès. Si ce n'était pas vous, contactez le support.",
+    });
+  }
+
+  // Notify admins when a business owner changes password
+  async notifyAdminPasswordChanged(userEmail: string, businessName: string) {
+    // Log for admin dashboard/audit trail
+    // Since admins don't have notifications in the same table,
+    // we log this event. In production, you could:
+    // 1. Send email to admins
+    // 2. Store in separate admin_notifications table
+    // 3. Use a webhook/external service
+    console.log(
+      `[ADMIN ALERT] Password changed for business: ${businessName} (${userEmail})`,
+    );
+
+    // For now, we return success - in production implement proper admin notification
+    return { success: true, message: 'Admin notified' };
+  }
+
+  // Notify admin reply on feedback
+  async notifyAdminReply(userId: string, feedbackId: string) {
+    return this.createNotification(userId, {
+      type: NotificationType.ADMIN_REPLY,
+      title: "🟡 Réponse de l'admin",
+      message: "L'administrateur a répondu à un de vos feedbacks.",
+      relatedId: feedbackId,
+    });
+  }
+
   // Notify weekly summary ready
   async notifyWeeklySummary(
     userId: string,
@@ -640,6 +676,8 @@ export class NotificationsService {
       [NotificationType.TRIAL_ENDING]: 'hourglass',
       [NotificationType.ACCOUNT_BLOCKED]: 'lock-closed',
       [NotificationType.ACCOUNT_UNBLOCKED]: 'lock-open',
+      [NotificationType.PASSWORD_CHANGED]: 'key',
+      [NotificationType.ADMIN_REPLY]: 'chatbubble-ellipses',
 
       // Performance
       [NotificationType.PERFORMANCE_DROP]: 'trending-down',

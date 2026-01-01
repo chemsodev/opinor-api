@@ -88,6 +88,23 @@ export class Feedback {
   @Column({ name: 'is_hidden', default: false })
   isHidden: boolean;
 
+  // Admin reply (only admin can reply, business owner can view)
+  @Column({ name: 'admin_reply', type: 'text', nullable: true })
+  adminReply: string | null;
+
+  @Column({ name: 'admin_reply_at', type: 'timestamp', nullable: true })
+  adminReplyAt: Date | null;
+
+  @Column({ name: 'admin_reply_by', type: 'varchar', nullable: true })
+  adminReplyBy: string | null;
+
+  // Soft delete
+  @Column({ name: 'deleted_at', type: 'timestamp', nullable: true })
+  deletedAt: Date | null;
+
+  @Column({ name: 'deleted_by', type: 'varchar', nullable: true })
+  deletedBy: string | null;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 

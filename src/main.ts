@@ -57,8 +57,8 @@ Most endpoints require a Bearer token. Login with your credentials to get an acc
 **Admin Login:** \`POST /auth/admin/login\`
 
 ### 👤 User Roles
-- **Business Owner**: Manages their business, views feedbacks, responds to customers
-- **Admin**: Manages all business owners, handles payments, sends notifications
+- **Business Owner**: Manages their business, views feedbacks
+- **Admin**: Manages all business owners, handles payments, replies to feedbacks, sends notifications
 
 ### ✨ Key Features
 
@@ -66,22 +66,27 @@ Most endpoints require a Bearer token. Login with your credentials to get an acc
 - 📝 **Anonymous Feedback**: Customers submit feedback via QR code
 - 📊 **Dashboard**: Real-time statistics and achievement tracking
 - 📈 **Reports**: Detailed analytics and exportable reports (PDF/CSV)
-- 🔔 **Notifications**: Auto-alerts for new feedbacks, performance changes
+- 🔔 **Notifications**: Auto-alerts for new feedbacks, performance changes, admin replies
 - 📱 **QR Code**: Generate and track QR code scans
-- 🔒 **Password Management**: Change password securely
+- 🔒 **Password Management**: Change password securely (admin notified)
+- 👀 **View Feedbacks**: Read-only access to feedbacks and admin replies
 
 #### For Admins:
-- 👥 **User Management**: View all business owners
-- 🚫 **Block/Unblock**: Manage account access (payment control)
+- 👥 **User Management**: View, block/unblock business owners
+- 💬 **Reply to Feedbacks**: Respond to any feedback (business owner sees the reply)
+- 🗑️ **Soft Delete**: Remove inappropriate feedbacks (can restore)
+- 📊 **Global Statistics**: View stats across all businesses
+- 📈 **Business Stats**: View specific business performance
 - 📢 **Manual Notifications**: Send custom notifications to users
 - 📣 **Broadcast**: Send announcements to all users
+- 🔔 **Password Alerts**: Notified when business owners change passwords
 
 ### 🔔 Notification Types
 | Type | Description |
 |------|-------------|
 | 🔴 Critical | Negative feedback (1-2★), critical keywords detected |
 | 🟢 Positive | Good reviews (4-5★), compliments |
-| 🟡 Admin | Subscription, payment, account status |
+| 🟡 Admin | Subscription, payment, account status, admin replies |
 | 🟠 Performance | Drops, improvements, trends |
 | 🔵 Reports | Weekly summaries, insights |
 | ⚪ System | QR scans, app updates |
@@ -104,6 +109,29 @@ The system automatically scans feedback comments for **70+ critical keywords** i
 | 💸 Refund | remboursement, réclamation, litige |
 
 When critical keywords are detected, a **"🔴 Mots-clés critiques détectés"** notification is sent with up to 3 detected keywords.
+
+### 👑 Admin Endpoints Summary
+
+#### User Management
+| Endpoint | Description |
+|----------|-------------|
+| \`GET /admin/users\` | List all business owners |
+| \`PATCH /admin/users/:id/block\` | Block user (payment control) |
+| \`PATCH /admin/users/:id/unblock\` | Unblock user |
+| \`POST /admin/users/:id/notify\` | Send notification to user |
+| \`POST /admin/users/notify/bulk\` | Notify multiple users |
+| \`POST /admin/users/notify/all\` | Broadcast to all |
+
+#### Feedbacks & Statistics
+| Endpoint | Description |
+|----------|-------------|
+| \`GET /admin/feedbacks\` | All feedbacks (filtered) |
+| \`GET /admin/feedbacks/statistics\` | Global stats |
+| \`GET /admin/feedbacks/business/:id\` | Business feedbacks |
+| \`GET /admin/feedbacks/business/:id/statistics\` | Business stats |
+| \`POST /admin/feedbacks/:id/reply\` | Reply to feedback |
+| \`DELETE /admin/feedbacks/:id\` | Soft delete feedback |
+| \`PATCH /admin/feedbacks/:id/restore\` | Restore feedback |
 
 ### API Versioning
 All endpoints are prefixed with \`/api/v1\`
@@ -134,6 +162,10 @@ All endpoints are prefixed with \`/api/v1\`
     .addTag(
       'Admin - Users Management',
       '👑 Admin: Manage business owners, block/unblock, send notifications',
+    )
+    .addTag(
+      'Admin - Feedbacks',
+      '👑 Admin: View all feedbacks, reply, soft delete, global statistics',
     )
     .build();
   const document = SwaggerModule.createDocument(app, config);

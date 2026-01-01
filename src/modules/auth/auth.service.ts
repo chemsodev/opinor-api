@@ -12,6 +12,7 @@ import { UsersService } from '../users/users.service';
 import { AdminService } from '../admin/admin.service';
 import { JoinRequestsService } from '../join-requests/join-requests.service';
 import { MailService } from '../mail/mail.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import {
   LoginDto,
   RegisterDto,
@@ -30,6 +31,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
     private readonly mailService: MailService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   async login(loginDto: LoginDto) {
@@ -329,6 +331,12 @@ export class AuthService {
     // Hash and update password
     const hashedPassword = await bcrypt.hash(newPassword, 10);
     await this.usersService.updatePassword(userId, hashedPassword);
+
+    // Notify admins about password change
+    await this.notificationsService.notifyAdminPasswordChanged(
+      user.email,
+      user.businessName,
+    );
 
     return {
       success: true,

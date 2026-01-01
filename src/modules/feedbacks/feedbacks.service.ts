@@ -5,7 +5,7 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, MoreThan } from 'typeorm';
+import { Repository, MoreThan, IsNull } from 'typeorm';
 import {
   Feedback,
   User,
@@ -98,7 +98,7 @@ export class FeedbacksService {
     } = queryDto;
     const skip = (page - 1) * limit;
 
-    const where: any = { businessId, isHidden: false };
+    const where: any = { businessId, isHidden: false, deletedAt: IsNull() };
     if (rating) where.rating = rating;
     if (sentiment) where.sentiment = sentiment;
     if (status) where.status = status;
@@ -127,7 +127,7 @@ export class FeedbacksService {
 
   async findById(id: string, businessId: string): Promise<Feedback> {
     const feedback = await this.feedbackRepository.findOne({
-      where: { id, businessId },
+      where: { id, businessId, deletedAt: IsNull() },
     });
 
     if (!feedback) {
@@ -214,6 +214,13 @@ export class FeedbacksService {
         response: {
           text: feedback.responseText,
           respondedAt: feedback.respondedAt?.toISOString(),
+        },
+      }),
+      // Admin reply (read-only for business owner)
+      ...(feedback.adminReply && {
+        adminReply: {
+          text: feedback.adminReply,
+          repliedAt: feedback.adminReplyAt?.toISOString(),
         },
       }),
     };
