@@ -79,12 +79,31 @@ Most endpoints require a Bearer token. Login with your credentials to get an acc
 ### 🔔 Notification Types
 | Type | Description |
 |------|-------------|
-| 🔴 Critical | Negative feedback (1-2★), critical keywords |
+| 🔴 Critical | Negative feedback (1-2★), critical keywords detected |
 | 🟢 Positive | Good reviews (4-5★), compliments |
 | 🟡 Admin | Subscription, payment, account status |
 | 🟠 Performance | Drops, improvements, trends |
 | 🔵 Reports | Weekly summaries, insights |
 | ⚪ System | QR scans, app updates |
+
+### 🚨 Critical Keywords Detection
+The system automatically scans feedback comments for **70+ critical keywords** in French. When detected, business owners receive an immediate alert.
+
+**Keyword Categories:**
+| Category | Examples |
+|----------|----------|
+| 🏥 Hygiene & Health | intoxication, malade, vomi, allergie, bactérie, cheveux, cafard |
+| 🧹 Cleanliness | sale, dégueulasse, dégoûtant, puant, crasseux |
+| 💰 Fraud & Theft | arnaque, vol, escroquerie, fraude, malhonnête |
+| ⚠️ Violence & Behavior | agression, insulte, menace, harcèlement, racisme |
+| 😤 Extreme Dissatisfaction | scandaleux, inadmissible, catastrophe, cauchemar |
+| ⚖️ Legal Threats | avocat, plainte, tribunal, procès, poursuite |
+| 🚑 Safety | blessure, accident, urgence, hôpital |
+| 🍽️ Quality Issues | immangeable, avarié, contaminé, toxique |
+| 👎 Strong Negatives | nul, minable, lamentable, incompétent |
+| 💸 Refund | remboursement, réclamation, litige |
+
+When critical keywords are detected, a **"🔴 Mots-clés critiques détectés"** notification is sent with up to 3 detected keywords.
 
 ### API Versioning
 All endpoints are prefixed with \`/api/v1\`
