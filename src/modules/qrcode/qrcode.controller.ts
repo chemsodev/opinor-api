@@ -63,28 +63,4 @@ export class QrcodeController {
   async getQrCodeStats(@CurrentUser() user: User) {
     return this.qrcodeService.getQrCodeStats(user.id);
   }
-
-  @Post('regenerate')
-  @ApiOperation({
-    summary: 'Regenerate QR code',
-    description:
-      'Generates a new unique code and QR code (invalidates old one)',
-  })
-  @ApiOkResponse({
-    description: 'New QR code generated',
-    schema: {
-      example: {
-        success: true,
-        data: {
-          uniqueCode: 'XYZ98765',
-          qrCodeUrl: 'https://api.opinor.app/qr/XYZ98765.png',
-          feedbackUrl: 'https://opinor.app/feedback/XYZ98765',
-        },
-        message: 'QR code regenerated successfully',
-      },
-    },
-  })
-  async regenerateQrCode(@CurrentUser() user: User) {
-    return this.qrcodeService.regenerateQrCode(user.id);
-  }
 }

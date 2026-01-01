@@ -67,7 +67,7 @@ Most endpoints require a Bearer token. Login with your credentials to get an acc
 - 📊 **Dashboard**: Real-time statistics and achievement tracking
 - 📈 **Reports**: Detailed analytics and exportable reports (PDF/CSV)
 - 🔔 **Notifications**: Auto-alerts for new feedbacks, performance changes, admin replies
-- 📱 **QR Code**: Generate and track QR code scans
+- 📱 **QR Code**: View QR code and track scans (read-only)
 - 🔒 **Password Management**: Change password securely (admin notified)
 - 👀 **View Feedbacks**: Read-only access to feedbacks and admin replies
 
@@ -79,8 +79,7 @@ Most endpoints require a Bearer token. Login with your credentials to get an acc
 - 📈 **Business Stats**: View specific business performance
 - 📢 **Manual Notifications**: Send custom notifications to users
 - 📣 **Broadcast**: Send announcements to all users
-- 🔔 **Password Alerts**: Notified when business owners change passwords
-
+- 🔔 **Password Alerts**: Notified when business owners change passwords- 📱 **QR Code Management**: View, track, and regenerate business QR codes
 ### 🔔 Notification Types
 | Type | Description |
 |------|-------------|
@@ -133,6 +132,13 @@ When critical keywords are detected, a **"🔴 Mots-clés critiques détectés"*
 | \`DELETE /admin/feedbacks/:id\` | Soft delete feedback |
 | \`PATCH /admin/feedbacks/:id/restore\` | Restore feedback |
 
+#### QR Code Management
+| Endpoint | Description |
+|----------|-------------|
+| \`GET /admin/qrcode/business/:id\` | Get business QR code |
+| \`GET /admin/qrcode/business/:id/stats\` | Get QR scan statistics |
+| \`POST /admin/qrcode/business/:id/regenerate\` | Regenerate QR code |
+
 ### API Versioning
 All endpoints are prefixed with \`/api/v1\`
       `,
@@ -166,6 +172,10 @@ All endpoints are prefixed with \`/api/v1\`
     .addTag(
       'Admin - Feedbacks',
       '👑 Admin: View all feedbacks, reply, soft delete, global statistics',
+    )
+    .addTag(
+      'Admin - QR Code',
+      '👑 Admin: View and manage QR codes for any business',
     )
     .build();
   const document = SwaggerModule.createDocument(app, config);
