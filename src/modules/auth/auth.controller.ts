@@ -131,12 +131,22 @@ export class AuthController {
   @Post('change-password')
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
-  @ApiBearerAuth()
+  @ApiBearerAuth('access-token')
   @ApiOperation({
     summary: 'Change password',
-    description: 'Change the current user password',
+    description:
+      'Change the current user password. Requires current password verification.',
   })
-  @ApiResponse({ status: 200, description: 'Password changed successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'Password changed successfully',
+    schema: {
+      example: {
+        success: true,
+        message: 'Password changed successfully',
+      },
+    },
+  })
   @ApiResponse({
     status: 400,
     description: 'Invalid current password or passwords do not match',

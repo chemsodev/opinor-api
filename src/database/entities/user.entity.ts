@@ -94,10 +94,10 @@ export class User {
   @Column({ name: 'is_blocked', default: false })
   isBlocked: boolean;
 
-  @Column({ name: 'blocked_reason', nullable: true })
+  @Column({ type: 'varchar', name: 'blocked_reason', nullable: true })
   blockedReason: string | null;
 
-  @Column({ name: 'blocked_at', type: 'timestamp', nullable: true })
+  @Column({ type: 'timestamp', name: 'blocked_at', nullable: true })
   blockedAt: Date | null;
 
   @Column({ name: 'is_email_verified', default: false })

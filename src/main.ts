@@ -50,15 +50,41 @@ async function bootstrap() {
 
 Opinor helps business owners collect and manage anonymous customer feedback through QR codes.
 
-### Authentication
-Most endpoints require a Bearer token. Login with your business owner credentials to get an access token.
+### 🔐 Authentication
+Most endpoints require a Bearer token. Login with your credentials to get an access token.
 
-### Key Features
-- **Anonymous Feedback**: Customers submit feedback via QR code without revealing identity
-- **Dashboard**: Real-time statistics and achievement tracking
-- **Reports**: Detailed analytics and exportable reports
-- **Notifications**: Stay updated on new feedbacks and achievements
-- **QR Code Management**: Generate and track QR code scans
+**Business Owner Login:** \`POST /auth/login\`
+**Admin Login:** \`POST /auth/admin/login\`
+
+### 👤 User Roles
+- **Business Owner**: Manages their business, views feedbacks, responds to customers
+- **Admin**: Manages all business owners, handles payments, sends notifications
+
+### ✨ Key Features
+
+#### For Business Owners:
+- 📝 **Anonymous Feedback**: Customers submit feedback via QR code
+- 📊 **Dashboard**: Real-time statistics and achievement tracking
+- 📈 **Reports**: Detailed analytics and exportable reports (PDF/CSV)
+- 🔔 **Notifications**: Auto-alerts for new feedbacks, performance changes
+- 📱 **QR Code**: Generate and track QR code scans
+- 🔒 **Password Management**: Change password securely
+
+#### For Admins:
+- 👥 **User Management**: View all business owners
+- 🚫 **Block/Unblock**: Manage account access (payment control)
+- 📢 **Manual Notifications**: Send custom notifications to users
+- 📣 **Broadcast**: Send announcements to all users
+
+### 🔔 Notification Types
+| Type | Description |
+|------|-------------|
+| 🔴 Critical | Negative feedback (1-2★), critical keywords |
+| 🟢 Positive | Good reviews (4-5★), compliments |
+| 🟡 Admin | Subscription, payment, account status |
+| 🟠 Performance | Drops, improvements, trends |
+| 🔵 Reports | Weekly summaries, insights |
+| ⚪ System | QR scans, app updates |
 
 ### API Versioning
 All endpoints are prefixed with \`/api/v1\`
@@ -78,14 +104,18 @@ All endpoints are prefixed with \`/api/v1\`
       },
       'access-token',
     )
-    .addTag('Auth', 'Authentication & registration endpoints')
-    .addTag('Users', 'User profile & settings management')
-    .addTag('Dashboard', 'Home screen data & statistics')
-    .addTag('Feedbacks', 'Feedback submission & management')
-    .addTag('Reports', 'Analytics & reporting')
-    .addTag('Notifications', 'Push notification management')
-    .addTag('QR Code', 'QR code generation & tracking')
+    .addTag('Auth', 'Authentication, registration & password management')
+    .addTag('Users', 'User profile, business info & settings')
+    .addTag('Dashboard', 'Home screen data, stats & achievements')
+    .addTag('Feedbacks', 'Anonymous feedback submission & management')
+    .addTag('Reports', 'Analytics, statistics & export')
+    .addTag('Notifications', 'Push notifications & alerts')
+    .addTag('QR Code', 'QR code generation & scan tracking')
     .addTag('Join Requests', 'Business registration requests')
+    .addTag(
+      'Admin - Users Management',
+      '👑 Admin: Manage business owners, block/unblock, send notifications',
+    )
     .build();
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/docs', app, document, {
