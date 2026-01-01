@@ -11,6 +11,172 @@ interface CreateNotificationDto {
   relatedId?: string;
 }
 
+// Critical keywords that trigger alerts (French)
+const CRITICAL_KEYWORDS: string[] = [
+  // Hygiene & Health
+  'intoxication',
+  'intoxiqué',
+  'malade',
+  'maladie',
+  'vomi',
+  'vomir',
+  'diarrhée',
+  'allergie',
+  'allergique',
+  'empoisonnement',
+  'empoisonné',
+  'infecté',
+  'infection',
+  'bactérie',
+  'salmonelle',
+  'hygiène',
+  'insalubre',
+  'moisi',
+  'périmé',
+  'pourri',
+  'cheveux',
+  'poil',
+  'insecte',
+  'cafard',
+  'mouche',
+  'rat',
+  'souris',
+  'vermine',
+
+  // Cleanliness
+  'sale',
+  'saleté',
+  'dégueulasse',
+  'dégoûtant',
+  'répugnant',
+  'immonde',
+  'crade',
+  'crasseux',
+  'puant',
+  'odeur',
+  'nauséabond',
+  'toilettes sales',
+  'wc sale',
+
+  // Fraud & Theft
+  'arnaque',
+  'arnaqué',
+  'escroquerie',
+  'escroc',
+  'voleur',
+  'vol',
+  'volé',
+  'fraude',
+  'frauduleux',
+  'malhonnête',
+  'tromperie',
+  'trompé',
+  'surfacturation',
+
+  // Violence & Behavior
+  'violence',
+  'violent',
+  'agression',
+  'agressif',
+  'insulte',
+  'insulté',
+  'menace',
+  'menacé',
+  'harcèlement',
+  'harcelé',
+  'racisme',
+  'raciste',
+  'discrimination',
+  'discriminé',
+  'sexisme',
+  'sexiste',
+  'irrespect',
+
+  // Extreme dissatisfaction
+  'scandaleux',
+  'honteux',
+  'inadmissible',
+  'inacceptable',
+  'catastrophe',
+  'catastrophique',
+  'horrible',
+  'atroce',
+  'pire',
+  'cauchemar',
+  'enfer',
+  'jamais plus',
+  'plus jamais',
+  'à éviter',
+  'fuyez',
+  'danger',
+  'dangereux',
+
+  // Legal threats
+  'avocat',
+  'justice',
+  'tribunal',
+  'plainte',
+  'porter plainte',
+  'procès',
+  'poursuite',
+  'poursuivre',
+  'juridique',
+  'légal',
+  'illégal',
+
+  // Safety
+  'brûlé',
+  'brûlure',
+  'blessé',
+  'blessure',
+  'accident',
+  'chute',
+  'glissade',
+  'urgence',
+  'hôpital',
+  'médecin',
+  'pompier',
+  'ambulance',
+
+  // Quality issues
+  'froid',
+  'pas cuit',
+  'cru',
+  'brûlé',
+  'immangeable',
+  'imbuvable',
+  'avarié',
+  'contaminé',
+  'toxique',
+
+  // Strong negative words
+  'nul',
+  'nullité',
+  'zéro',
+  'minable',
+  'lamentable',
+  'pitoyable',
+  'incompétent',
+  'incompétence',
+  'honte',
+  'ridicule',
+  'pathétique',
+  'médiocre',
+  'exécrable',
+  'infect',
+  'ignoble',
+  'abominable',
+
+  // Refund & Complaints
+  'remboursement',
+  'rembourser',
+  'remboursé',
+  'réclamation',
+  'litige',
+  'dédomagement',
+  'compensation',
+];
+
 @Injectable()
 export class NotificationsService {
   constructor(
@@ -221,6 +387,182 @@ export class NotificationsService {
       type: NotificationType.QR_SCAN_MILESTONE,
       title: '⚪ QR Code populaire',
       message: `Votre QR Opinor a été scanné ${scanCount} fois aujourd'hui !`,
+    });
+  }
+
+  // Critical keywords detection and notification
+  async notifyCriticalKeywords(
+    userId: string,
+    feedbackId: string,
+    detectedKeywords: string[],
+  ) {
+    const keywordsList = detectedKeywords.slice(0, 3).join(', ');
+    return this.createNotification(userId, {
+      type: NotificationType.CRITICAL_KEYWORDS,
+      title: '🔴 Mots-clés critiques détectés',
+      message: `Un avis contient des termes sensibles: ${keywordsList}. Vérifiez rapidement.`,
+      relatedId: feedbackId,
+    });
+  }
+
+  // Check text for critical keywords and return matches
+  detectCriticalKeywords(text: string): string[] {
+    if (!text) return [];
+
+    const normalizedText = text
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, ''); // Remove accents for matching
+
+    const detected: string[] = [];
+
+    for (const keyword of CRITICAL_KEYWORDS) {
+      const normalizedKeyword = keyword
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '');
+
+      // Use word boundary matching to avoid partial matches
+      const regex = new RegExp(`\\b${normalizedKeyword}\\b`, 'i');
+      if (regex.test(normalizedText)) {
+        detected.push(keyword);
+      }
+    }
+
+    return detected;
+  }
+
+  // Check feedback and send appropriate notifications
+  async checkAndNotifyFeedback(
+    userId: string,
+    feedbackId: string,
+    rating: number,
+    comment?: string,
+  ) {
+    const notifications: Promise<Notification>[] = [];
+
+    // Check for critical keywords in comment
+    if (comment) {
+      const detectedKeywords = this.detectCriticalKeywords(comment);
+      if (detectedKeywords.length > 0) {
+        notifications.push(
+          this.notifyCriticalKeywords(userId, feedbackId, detectedKeywords),
+        );
+      }
+    }
+
+    // Also send rating-based notification
+    if (rating <= 2) {
+      notifications.push(
+        this.notifyCriticalFeedback(userId, feedbackId, rating),
+      );
+    } else if (rating >= 4) {
+      notifications.push(
+        this.notifyPositiveFeedback(userId, feedbackId, rating),
+      );
+    } else {
+      notifications.push(
+        this.createNotification(userId, {
+          type: NotificationType.NEW_FEEDBACK,
+          title: 'Nouveau feedback',
+          message: `Vous avez reçu un avis ${rating}★.`,
+          relatedId: feedbackId,
+        }),
+      );
+    }
+
+    return Promise.all(notifications);
+  }
+
+  // Notify about low satisfaction score
+  async notifyLowSatisfactionScore(userId: string, score: number) {
+    return this.createNotification(userId, {
+      type: NotificationType.LOW_SATISFACTION_SCORE,
+      title: '🔴 Score de satisfaction bas',
+      message: `Votre score de satisfaction est tombé à ${score}%. Action recommandée.`,
+    });
+  }
+
+  // Notify about compliment
+  async notifyCompliment(
+    userId: string,
+    feedbackId: string,
+    complimentType: string,
+  ) {
+    return this.createNotification(userId, {
+      type: NotificationType.COMPLIMENT,
+      title: '🟢 Compliment reçu',
+      message: `Un client a complimenté votre ${complimentType} !`,
+      relatedId: feedbackId,
+    });
+  }
+
+  // Notify about trial ending
+  async notifyTrialEnding(userId: string, daysLeft: number) {
+    return this.createNotification(userId, {
+      type: NotificationType.TRIAL_ENDING,
+      title: "🟡 Période d'essai",
+      message: `Votre période d'essai se termine dans ${daysLeft} jours.`,
+    });
+  }
+
+  // Notify account blocked
+  async notifyAccountBlocked(userId: string, reason?: string) {
+    return this.createNotification(userId, {
+      type: NotificationType.ACCOUNT_BLOCKED,
+      title: '🟡 Compte suspendu',
+      message: reason
+        ? `Votre compte a été suspendu: ${reason}`
+        : 'Votre compte a été suspendu. Contactez le support.',
+    });
+  }
+
+  // Notify account unblocked
+  async notifyAccountUnblocked(userId: string) {
+    return this.createNotification(userId, {
+      type: NotificationType.ACCOUNT_UNBLOCKED,
+      title: '🟡 Compte réactivé',
+      message: 'Votre compte a été réactivé. Bienvenue à nouveau !',
+    });
+  }
+
+  // Notify weekly summary ready
+  async notifyWeeklySummary(
+    userId: string,
+    feedbackCount: number,
+    avgRating: number,
+  ) {
+    return this.createNotification(userId, {
+      type: NotificationType.WEEKLY_SUMMARY,
+      title: '🔵 Résumé hebdomadaire',
+      message: `Cette semaine: ${feedbackCount} avis, moyenne ${avgRating.toFixed(1)}★.`,
+    });
+  }
+
+  // Notify report ready
+  async notifyReportReady(userId: string, reportType: string) {
+    return this.createNotification(userId, {
+      type: NotificationType.REPORT_READY,
+      title: '🔵 Rapport disponible',
+      message: `Votre ${reportType} est prêt à être consulté.`,
+    });
+  }
+
+  // Notify insight alert
+  async notifyInsight(userId: string, insightMessage: string) {
+    return this.createNotification(userId, {
+      type: NotificationType.INSIGHT_ALERT,
+      title: '🔵 Nouvelle insight',
+      message: insightMessage,
+    });
+  }
+
+  // Notify app update
+  async notifyAppUpdate(userId: string, version: string) {
+    return this.createNotification(userId, {
+      type: NotificationType.APP_UPDATE,
+      title: '⚪ Mise à jour disponible',
+      message: `La version ${version} d'Opinor est disponible.`,
     });
   }
 

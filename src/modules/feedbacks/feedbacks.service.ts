@@ -76,12 +76,12 @@ export class FeedbacksService {
 
     const savedFeedback = await this.feedbackRepository.save(feedback);
 
-    // Create notification for the business owner
-    await this.notificationsService.notifyNewFeedback(
+    // Create notification for the business owner (includes critical keywords detection)
+    await this.notificationsService.checkAndNotifyFeedback(
       business.id,
       savedFeedback.id,
       rating,
-      sentiment,
+      createFeedbackDto.comment,
     );
 
     return savedFeedback;
