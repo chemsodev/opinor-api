@@ -12,6 +12,10 @@ import { AdminModule } from './modules/admin/admin.module';
 import { JoinRequestsModule } from './modules/join-requests/join-requests.module';
 import { FeedbacksModule } from './modules/feedbacks/feedbacks.module';
 import { MailModule } from './modules/mail/mail.module';
+import { DashboardModule } from './modules/dashboard/dashboard.module';
+import { ReportsModule } from './modules/reports/reports.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
+import { QrcodeModule } from './modules/qrcode/qrcode.module';
 
 @Module({
   imports: [
@@ -61,6 +65,10 @@ import { MailModule } from './modules/mail/mail.module';
     JoinRequestsModule,
     FeedbacksModule,
     MailModule,
+    DashboardModule,
+    ReportsModule,
+    NotificationsModule,
+    QrcodeModule,
   ],
   controllers: [AppController],
   providers: [

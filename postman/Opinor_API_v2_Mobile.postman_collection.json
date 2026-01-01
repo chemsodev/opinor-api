@@ -1,0 +1,1273 @@
+{
+  "info": {
+    "_postman_id": "opinor-api-collection-v2",
+    "name": "Opinor API v2 - Full Mobile App",
+    "description": "Opinor - Feedback/Review System for Businesses\n\n## Overview\nComplete API for the Opinor mobile app. Includes Dashboard, Reports, Notifications, QR Code, and full profile management.\n\n## Authentication\n- Uses JWT Bearer tokens\n- Access token expires in 15 minutes\n- Refresh token expires in 7 days\n\n## Test Accounts\n| Role | Email | Password |\n|------|-------|----------|\n| Admin | admin@opinor.com | Admin@123 |\n| User | demo@restaurant.com | Demo@123 |",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000/api/v1",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refreshToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "adminAccessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "adminRefreshToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "businessCode",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "joinRequestId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "invitationCode",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "feedbackId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "notificationId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "reportId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "🔐 Auth - User",
+      "description": "Authentication endpoints for business owners",
+      "item": [
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('accessToken', response.data.accessToken || response.data.token);",
+                  "    pm.collectionVariables.set('refreshToken', response.data.refreshToken);",
+                  "    if (response.data.user && response.data.user.uniqueCode) {",
+                  "        pm.collectionVariables.set('businessCode', response.data.user.uniqueCode);",
+                  "    }",
+                  "    pm.test('Login successful', function() {",
+                  "        pm.expect(response.success).to.be.true;",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"demo@restaurant.com\",\n  \"password\": \"Demo@123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Register (with invitation code)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('accessToken', response.data.accessToken || response.data.token);",
+                  "    pm.collectionVariables.set('refreshToken', response.data.refreshToken);",
+                  "    if (response.data.user) pm.collectionVariables.set('businessCode', response.data.user.uniqueCode);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"{{invitationCode}}\",\n  \"email\": \"newbusiness@test.com\",\n  \"password\": \"NewBiz@123\",\n  \"businessName\": \"New Business\",\n  \"businessType\": \"RESTAURANT\",\n  \"phone\": \"+1234567890\",\n  \"address\": \"123 New Street\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "register"]
+            }
+          }
+        },
+        {
+          "name": "Get Current User (me)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "me"]
+            }
+          }
+        },
+        {
+          "name": "Refresh Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('accessToken', response.data.accessToken);",
+                  "    pm.collectionVariables.set('refreshToken', response.data.refreshToken);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/refresh",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "refresh"]
+            }
+          }
+        },
+        {
+          "name": "Forgot Password",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"demo@restaurant.com\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/forgot-password",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "forgot-password"]
+            }
+          }
+        },
+        {
+          "name": "Reset Password",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"reset-token-from-email\",\n  \"newPassword\": \"NewPassword@123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/reset-password",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "reset-password"]
+            }
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/logout",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "logout"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🔐 Auth - Admin",
+      "description": "Admin authentication",
+      "item": [
+        {
+          "name": "Admin Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('adminAccessToken', response.data.accessToken);",
+                  "    pm.collectionVariables.set('adminRefreshToken', response.data.refreshToken);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@opinor.com\",\n  \"password\": \"Admin@123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/admin/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "admin", "login"]
+            }
+          }
+        },
+        {
+          "name": "Get Current Admin",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminAccessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/admin/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "admin", "me"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📊 Dashboard",
+      "description": "Home dashboard endpoints for mobile app",
+      "item": [
+        {
+          "name": "Get Dashboard Summary",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/dashboard/summary",
+              "host": ["{{baseUrl}}"],
+              "path": ["dashboard", "summary"]
+            },
+            "description": "Get average rating, total feedbacks today/week/month"
+          }
+        },
+        {
+          "name": "Get Feedback Chart (Week)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/dashboard/feedback-chart?period=week",
+              "host": ["{{baseUrl}}"],
+              "path": ["dashboard", "feedback-chart"],
+              "query": [{ "key": "period", "value": "week" }]
+            },
+            "description": "Get feedback trend for last 7 days"
+          }
+        },
+        {
+          "name": "Get Feedback Chart (Month)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/dashboard/feedback-chart?period=month",
+              "host": ["{{baseUrl}}"],
+              "path": ["dashboard", "feedback-chart"],
+              "query": [{ "key": "period", "value": "month" }]
+            },
+            "description": "Get feedback trend for last 30 days"
+          }
+        },
+        {
+          "name": "Get Achievements",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/dashboard/achievements",
+              "host": ["{{baseUrl}}"],
+              "path": ["dashboard", "achievements"]
+            },
+            "description": "Get user achievements and badges"
+          }
+        }
+      ]
+    },
+    {
+      "name": "📝 Feedbacks - Public",
+      "description": "Public feedback submission (no auth)",
+      "item": [
+        {
+          "name": "Submit Feedback",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('feedbackId', response.data.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rating\": 4.5,\n  \"comment\": \"Great service and excellent food! Will come back.\",\n  \"customerName\": \"John Doe\",\n  \"customerEmail\": \"john@example.com\",\n  \"category\": \"service\",\n  \"location\": \"Main Branch\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/feedbacks/{{businessCode}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["feedbacks", "{{businessCode}}"]
+            }
+          }
+        },
+        {
+          "name": "Get Public Stats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/feedbacks/business/{{businessCode}}/stats",
+              "host": ["{{baseUrl}}"],
+              "path": ["feedbacks", "business", "{{businessCode}}", "stats"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📝 Feedbacks - Business Owner",
+      "description": "Feedback management for authenticated users",
+      "item": [
+        {
+          "name": "Get All Feedbacks",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/feedbacks?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["feedbacks"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" },
+                { "key": "status", "value": "new", "disabled": true },
+                { "key": "sentiment", "value": "positive", "disabled": true },
+                { "key": "category", "value": "service", "disabled": true },
+                { "key": "minRating", "value": "4", "disabled": true },
+                { "key": "maxRating", "value": "5", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Feedback by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/feedbacks/{{feedbackId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["feedbacks", "{{feedbackId}}"]
+            }
+          }
+        },
+        {
+          "name": "Respond to Feedback",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"Thank you for your feedback! We appreciate your kind words and look forward to seeing you again!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/feedbacks/{{feedbackId}}/response",
+              "host": ["{{baseUrl}}"],
+              "path": ["feedbacks", "{{feedbackId}}", "response"]
+            }
+          }
+        },
+        {
+          "name": "Get My Stats",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/feedbacks/stats",
+              "host": ["{{baseUrl}}"],
+              "path": ["feedbacks", "stats"]
+            }
+          }
+        },
+        {
+          "name": "Hide Feedback",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/feedbacks/{{feedbackId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["feedbacks", "{{feedbackId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📈 Reports",
+      "description": "Analytics and reports",
+      "item": [
+        {
+          "name": "Get Statistics - Today",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reports/statistics?period=today",
+              "host": ["{{baseUrl}}"],
+              "path": ["reports", "statistics"],
+              "query": [{ "key": "period", "value": "today" }]
+            }
+          }
+        },
+        {
+          "name": "Get Statistics - Week",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reports/statistics?period=week",
+              "host": ["{{baseUrl}}"],
+              "path": ["reports", "statistics"],
+              "query": [{ "key": "period", "value": "week" }]
+            }
+          }
+        },
+        {
+          "name": "Get Statistics - Month",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reports/statistics?period=month",
+              "host": ["{{baseUrl}}"],
+              "path": ["reports", "statistics"],
+              "query": [{ "key": "period", "value": "month" }]
+            }
+          }
+        },
+        {
+          "name": "Get Ratings Distribution",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reports/ratings-distribution?period=month",
+              "host": ["{{baseUrl}}"],
+              "path": ["reports", "ratings-distribution"],
+              "query": [{ "key": "period", "value": "month" }]
+            }
+          }
+        },
+        {
+          "name": "Get Monthly Reports History",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.data.reports && response.data.reports.length > 0) {",
+                  "        pm.collectionVariables.set('reportId', response.data.reports[0].id);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reports/history?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["reports", "history"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Detailed Report",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reports/{{reportId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["reports", "{{reportId}}"]
+            }
+          }
+        },
+        {
+          "name": "Export Report (PDF)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reports/{{reportId}}/export?format=pdf",
+              "host": ["{{baseUrl}}"],
+              "path": ["reports", "{{reportId}}", "export"],
+              "query": [{ "key": "format", "value": "pdf" }]
+            }
+          }
+        },
+        {
+          "name": "Export Report (CSV)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reports/{{reportId}}/export?format=csv",
+              "host": ["{{baseUrl}}"],
+              "path": ["reports", "{{reportId}}", "export"],
+              "query": [{ "key": "format", "value": "csv" }]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🔔 Notifications",
+      "description": "Push notifications management",
+      "item": [
+        {
+          "name": "Get All Notifications",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.data.notifications && response.data.notifications.length > 0) {",
+                  "        pm.collectionVariables.set('notificationId', response.data.notifications[0].id);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/notifications?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["notifications"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Unread Count",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/notifications/unread-count",
+              "host": ["{{baseUrl}}"],
+              "path": ["notifications", "unread-count"]
+            }
+          }
+        },
+        {
+          "name": "Mark as Read",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/notifications/{{notificationId}}/read",
+              "host": ["{{baseUrl}}"],
+              "path": ["notifications", "{{notificationId}}", "read"]
+            }
+          }
+        },
+        {
+          "name": "Mark All as Read",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/notifications/read-all",
+              "host": ["{{baseUrl}}"],
+              "path": ["notifications", "read-all"]
+            }
+          }
+        },
+        {
+          "name": "Delete Notification",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/notifications/{{notificationId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["notifications", "{{notificationId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📱 QR Code",
+      "description": "QR code management",
+      "item": [
+        {
+          "name": "Get QR Code",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/qrcode",
+              "host": ["{{baseUrl}}"],
+              "path": ["qrcode"]
+            }
+          }
+        },
+        {
+          "name": "Get QR Code Stats",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/qrcode/stats",
+              "host": ["{{baseUrl}}"],
+              "path": ["qrcode", "stats"]
+            }
+          }
+        },
+        {
+          "name": "Regenerate QR Code",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/qrcode/regenerate",
+              "host": ["{{baseUrl}}"],
+              "path": ["qrcode", "regenerate"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "👤 Profile & Settings",
+      "description": "User profile and settings management",
+      "item": [
+        {
+          "name": "Get Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "profile"]
+            }
+          }
+        },
+        {
+          "name": "Update Profile",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Paul\",\n  \"lastName\": \"Barista\",\n  \"avatar\": \"https://example.com/avatar.jpg\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "profile"]
+            }
+          }
+        },
+        {
+          "name": "Update Business Info",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"businessName\": \"Paul's Premium Coffee\",\n  \"businessCategory\": \"Café/Coffee Shop\",\n  \"businessAddress\": \"123 Main St, City, Country\",\n  \"businessPhone\": \"+1234567890\",\n  \"businessEmail\": \"contact@paulscoffee.com\",\n  \"logo\": \"https://example.com/logo.jpg\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/business-info",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "business-info"]
+            }
+          }
+        },
+        {
+          "name": "Get Settings",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/settings",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "settings"]
+            }
+          }
+        },
+        {
+          "name": "Update Settings",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"language\": \"en\",\n  \"theme\": \"dark\",\n  \"notificationsEnabled\": true,\n  \"emailNotifications\": true,\n  \"pushNotifications\": true,\n  \"emailFrequency\": \"daily\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/settings",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "settings"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📋 Join Requests",
+      "description": "Business registration requests",
+      "item": [
+        {
+          "name": "Submit Join Request (Public)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('joinRequestId', response.data.id);",
+                  "    pm.collectionVariables.set('invitationCode', response.data.generatedCode);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"newbusiness@test.com\",\n  \"businessName\": \"Beach Paradise\",\n  \"businessType\": \"BEACH\",\n  \"phone\": \"+1987654321\",\n  \"address\": \"456 Ocean Drive\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/join-requests",
+              "host": ["{{baseUrl}}"],
+              "path": ["join-requests"]
+            }
+          }
+        },
+        {
+          "name": "Verify Invitation Code (Public)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/join-requests/{{invitationCode}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["join-requests", "{{invitationCode}}"]
+            }
+          }
+        },
+        {
+          "name": "Get All Join Requests (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminAccessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/join-requests?status=PENDING",
+              "host": ["{{baseUrl}}"],
+              "path": ["join-requests"],
+              "query": [{ "key": "status", "value": "PENDING" }]
+            }
+          }
+        },
+        {
+          "name": "Get Join Request by ID (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminAccessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/join-requests/{{joinRequestId}}/detail",
+              "host": ["{{baseUrl}}"],
+              "path": ["join-requests", "{{joinRequestId}}", "detail"]
+            }
+          }
+        },
+        {
+          "name": "Approve Join Request (Admin)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminAccessToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"APPROVED\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/join-requests/{{joinRequestId}}/review",
+              "host": ["{{baseUrl}}"],
+              "path": ["join-requests", "{{joinRequestId}}", "review"]
+            }
+          }
+        },
+        {
+          "name": "Reject Join Request (Admin)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminAccessToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"REJECTED\",\n  \"rejectionReason\": \"Incomplete documentation\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/join-requests/{{joinRequestId}}/review",
+              "host": ["{{baseUrl}}"],
+              "path": ["join-requests", "{{joinRequestId}}", "review"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🧪 Test Flows",
+      "description": "Complete test scenarios",
+      "item": [
+        {
+          "name": "Flow 1: Full Mobile App Experience",
+          "item": [
+            {
+              "name": "1. Login",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "const response = pm.response.json();",
+                      "pm.collectionVariables.set('accessToken', response.data.accessToken || response.data.token);",
+                      "pm.collectionVariables.set('businessCode', response.data.user.uniqueCode);",
+                      "pm.test('Login successful', () => pm.expect(pm.response.code).to.equal(200));"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"demo@restaurant.com\",\n  \"password\": \"Demo@123\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/auth/login",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["auth", "login"]
+                }
+              }
+            },
+            {
+              "name": "2. Get Dashboard Summary",
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/dashboard/summary",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["dashboard", "summary"]
+                }
+              }
+            },
+            {
+              "name": "3. Get Feedback Chart",
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/dashboard/feedback-chart?period=week",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["dashboard", "feedback-chart"],
+                  "query": [{ "key": "period", "value": "week" }]
+                }
+              }
+            },
+            {
+              "name": "4. Get Achievements",
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/dashboard/achievements",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["dashboard", "achievements"]
+                }
+              }
+            },
+            {
+              "name": "5. Get Feedbacks",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "const response = pm.response.json();",
+                      "if (response.data.feedbacks && response.data.feedbacks.length > 0) {",
+                      "    pm.collectionVariables.set('feedbackId', response.data.feedbacks[0].id);",
+                      "}"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/feedbacks?page=1&limit=20",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["feedbacks"],
+                  "query": [
+                    { "key": "page", "value": "1" },
+                    { "key": "limit", "value": "20" }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "6. Get Reports Statistics",
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/reports/statistics?period=month",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["reports", "statistics"],
+                  "query": [{ "key": "period", "value": "month" }]
+                }
+              }
+            },
+            {
+              "name": "7. Get Notifications",
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/notifications",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["notifications"]
+                }
+              }
+            },
+            {
+              "name": "8. Get QR Code",
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/qrcode",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["qrcode"]
+                }
+              }
+            },
+            {
+              "name": "9. Get Profile",
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/users/profile",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["users", "profile"]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Flow 2: Submit & Respond to Feedback",
+          "item": [
+            {
+              "name": "1. Login",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "const response = pm.response.json();",
+                      "pm.collectionVariables.set('accessToken', response.data.accessToken || response.data.token);",
+                      "pm.collectionVariables.set('businessCode', response.data.user.uniqueCode);"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"demo@restaurant.com\",\n  \"password\": \"Demo@123\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/auth/login",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["auth", "login"]
+                }
+              }
+            },
+            {
+              "name": "2. Submit Feedback (Public)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "const response = pm.response.json();",
+                      "pm.collectionVariables.set('feedbackId', response.data.id);"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"rating\": 5,\n  \"comment\": \"Amazing experience! The service was top-notch.\",\n  \"customerName\": \"Happy Customer\",\n  \"customerEmail\": \"happy@customer.com\",\n  \"category\": \"service\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/feedbacks/{{businessCode}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["feedbacks", "{{businessCode}}"]
+                }
+              }
+            },
+            {
+              "name": "3. View Feedback",
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/feedbacks/{{feedbackId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["feedbacks", "{{feedbackId}}"]
+                }
+              }
+            },
+            {
+              "name": "4. Respond to Feedback",
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" },
+                  { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"text\": \"Thank you so much for your kind words! We're thrilled you had a great experience. See you again soon!\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/feedbacks/{{feedbackId}}/response",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["feedbacks", "{{feedbackId}}", "response"]
+                }
+              }
+            },
+            {
+              "name": "5. Verify Response Added",
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/feedbacks/{{feedbackId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["feedbacks", "{{feedbackId}}"]
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

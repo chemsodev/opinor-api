@@ -1,16 +1,20 @@
 import {
-  IsInt,
   IsString,
-  IsEmail,
   IsOptional,
+  IsEnum,
+  IsArray,
   Min,
   Max,
+  IsNumber,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { FeedbackCategory } from '../../../database/entities/enums';
+import { Type } from 'class-transformer';
 
 export class CreateFeedbackDto {
   @ApiProperty({ example: 5, minimum: 1, maximum: 5 })
-  @IsInt()
+  @Type(() => Number)
+  @IsNumber()
   @Min(1)
   @Max(5)
   rating: number;
@@ -20,13 +24,28 @@ export class CreateFeedbackDto {
   @IsString()
   comment?: string;
 
-  @ApiPropertyOptional({ example: 'John Doe' })
+  @ApiPropertyOptional({ enum: FeedbackCategory, example: 'service' })
+  @IsOptional()
+  @IsEnum(FeedbackCategory)
+  category?: FeedbackCategory;
+
+  @ApiPropertyOptional({ example: 'New York, NY' })
   @IsOptional()
   @IsString()
-  customerName?: string;
+  location?: string;
 
-  @ApiPropertyOptional({ example: 'john@example.com' })
+  @ApiPropertyOptional({
+    type: [String],
+    example: ['https://example.com/image1.jpg'],
+  })
   @IsOptional()
-  @IsEmail()
-  customerEmail?: string;
+  @IsArray()
+  @IsString({ each: true })
+  images?: string[];
+
+  @ApiPropertyOptional({ type: [String], example: ['friendly', 'quick'] })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  tags?: string[];
 }

@@ -53,15 +53,22 @@ export class AuthService {
     await this.usersService.updateRefreshToken(user.id, tokens.refreshToken);
 
     return {
-      accessToken: tokens.accessToken,
-      refreshToken: tokens.refreshToken,
-      user: {
-        id: user.id,
-        email: user.email,
-        businessName: user.businessName,
-        businessType: user.businessType,
-        uniqueCode: user.uniqueCode,
+      success: true,
+      data: {
+        user: {
+          id: user.id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          businessName: user.businessName,
+          role: 'business_owner',
+          avatar: user.avatar,
+          createdAt: user.createdAt.toISOString(),
+        },
+        token: tokens.accessToken,
+        refreshToken: tokens.refreshToken,
       },
+      message: 'Login successful',
     };
   }
 
@@ -88,13 +95,17 @@ export class AuthService {
     await this.adminService.updateRefreshToken(admin.id, tokens.refreshToken);
 
     return {
-      accessToken: tokens.accessToken,
-      refreshToken: tokens.refreshToken,
-      admin: {
-        id: admin.id,
-        email: admin.email,
-        role: admin.role,
+      success: true,
+      data: {
+        admin: {
+          id: admin.id,
+          email: admin.email,
+          role: admin.role,
+        },
+        token: tokens.accessToken,
+        refreshToken: tokens.refreshToken,
       },
+      message: 'Admin login successful',
     };
   }
 
@@ -154,15 +165,21 @@ export class AuthService {
     await this.usersService.updateRefreshToken(user.id, tokens.refreshToken);
 
     return {
-      accessToken: tokens.accessToken,
-      refreshToken: tokens.refreshToken,
-      user: {
-        id: user.id,
-        email: user.email,
-        businessName: user.businessName,
-        businessType: user.businessType,
-        uniqueCode: user.uniqueCode,
+      success: true,
+      data: {
+        user: {
+          id: user.id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          businessName: user.businessName,
+          role: 'business_owner',
+          createdAt: user.createdAt.toISOString(),
+        },
+        token: tokens.accessToken,
+        refreshToken: tokens.refreshToken,
       },
+      message: 'Account created successfully',
     };
   }
 

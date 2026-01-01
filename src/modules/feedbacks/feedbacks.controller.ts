@@ -3,6 +3,7 @@ import {
   Post,
   Get,
   Delete,
+  Patch,
   Param,
   Body,
   Query,
@@ -13,12 +14,18 @@ import {
   ApiOperation,
   ApiResponse,
   ApiBearerAuth,
+  ApiQuery,
 } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { FeedbacksService } from './feedbacks.service';
-import { CreateFeedbackDto, FeedbackQueryDto } from './dto';
+import {
+  CreateFeedbackDto,
+  FeedbackQueryDto,
+  RespondToFeedbackDto,
+} from './dto';
 import { JwtAuthGuard } from '../auth/guards';
 import { CurrentUser, Public, ClientIp } from '../../common/decorators';
+import { User } from '../../database/entities';
 
 @ApiTags('Feedbacks')
 @Controller('feedbacks')
@@ -44,8 +51,9 @@ export class FeedbacksController {
       ipAddress,
     );
     return {
+      success: true,
+      data: { id: feedback.id },
       message: 'Thank you for your feedback!',
-      id: feedback.id,
     };
   }
 
@@ -64,11 +72,24 @@ export class FeedbacksController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get own business feedbacks (paginated)' })
   @ApiResponse({ status: 200, description: 'Returns paginated feedbacks' })
+  @ApiQuery({ name: 'page', required: false })
+  @ApiQuery({ name: 'limit', required: false })
+  @ApiQuery({ name: 'rating', required: false })
+  @ApiQuery({
+    name: 'sentiment',
+    required: false,
+    enum: ['positive', 'negative', 'neutral'],
+  })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    enum: ['new', 'viewed', 'responded', 'archived'],
+  })
   async findAll(
-    @CurrentUser('id') userId: string,
+    @CurrentUser() user: User,
     @Query() queryDto: FeedbackQueryDto,
   ) {
-    return this.feedbacksService.findAllForBusiness(userId, queryDto);
+    return this.feedbacksService.findAllForBusiness(user.id, queryDto);
   }
 
   @Get('stats')
@@ -76,8 +97,8 @@ export class FeedbacksController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get own business statistics' })
   @ApiResponse({ status: 200, description: 'Returns business statistics' })
-  async getStats(@CurrentUser('id') userId: string) {
-    return this.feedbacksService.getStatsForBusiness(userId);
+  async getStats(@CurrentUser() user: User) {
+    return this.feedbacksService.getStatsForBusiness(user.id);
   }
 
   @Get(':id')
@@ -86,8 +107,39 @@ export class FeedbacksController {
   @ApiOperation({ summary: 'Get a specific feedback' })
   @ApiResponse({ status: 200, description: 'Returns the feedback' })
   @ApiResponse({ status: 404, description: 'Feedback not found' })
-  async findOne(@Param('id') id: string, @CurrentUser('id') userId: string) {
-    return this.feedbacksService.findById(id, userId);
+  async findOne(@Param('id') id: string, @CurrentUser() user: User) {
+    return this.feedbacksService.findByIdFormatted(id, user.id);
+  }
+
+  @Post(':id/response')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Submit response to a feedback' })
+  @ApiResponse({ status: 200, description: 'Response submitted successfully' })
+  @ApiResponse({ status: 404, description: 'Feedback not found' })
+  async respondToFeedback(
+    @Param('id') id: string,
+    @CurrentUser() user: User,
+    @Body() respondDto: RespondToFeedbackDto,
+  ) {
+    return this.feedbacksService.respondToFeedback(
+      id,
+      user.id,
+      respondDto.text,
+    );
+  }
+
+  @Patch(':id/status')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update feedback status' })
+  @ApiResponse({ status: 200, description: 'Status updated successfully' })
+  async updateStatus(
+    @Param('id') id: string,
+    @CurrentUser() user: User,
+    @Body('status') status: string,
+  ) {
+    return this.feedbacksService.updateStatus(id, user.id, status);
   }
 
   @Delete(':id')
@@ -96,8 +148,8 @@ export class FeedbacksController {
   @ApiOperation({ summary: 'Hide a feedback (soft delete)' })
   @ApiResponse({ status: 200, description: 'Feedback hidden successfully' })
   @ApiResponse({ status: 404, description: 'Feedback not found' })
-  async hide(@Param('id') id: string, @CurrentUser('id') userId: string) {
-    await this.feedbacksService.hideFeedback(id, userId);
-    return { message: 'Feedback hidden successfully' };
+  async hide(@Param('id') id: string, @CurrentUser() user: User) {
+    await this.feedbacksService.hideFeedback(id, user.id);
+    return { success: true, message: 'Feedback hidden successfully' };
   }
 }

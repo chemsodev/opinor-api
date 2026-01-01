@@ -20,6 +20,17 @@ export class User {
   @Column()
   password: string;
 
+  // Personal info
+  @Column({ name: 'first_name', nullable: true })
+  firstName: string;
+
+  @Column({ name: 'last_name', nullable: true })
+  lastName: string;
+
+  @Column({ nullable: true })
+  avatar: string;
+
+  // Business info
   @Column({ name: 'business_name' })
   businessName: string;
 
@@ -29,6 +40,21 @@ export class User {
     name: 'business_type',
   })
   businessType: BusinessType;
+
+  @Column({ name: 'business_category', nullable: true })
+  businessCategory: string;
+
+  @Column({ name: 'business_address', nullable: true })
+  businessAddress: string;
+
+  @Column({ name: 'business_phone', nullable: true })
+  businessPhone: string;
+
+  @Column({ name: 'business_email', nullable: true })
+  businessEmail: string;
+
+  @Column({ nullable: true })
+  logo: string;
 
   @Column({ nullable: true })
   phone: string;
@@ -42,12 +68,33 @@ export class User {
   @Column({ name: 'qr_code_url', nullable: true })
   qrCodeUrl: string;
 
+  // Settings
+  @Column({ default: 'en' })
+  language: string;
+
+  @Column({ default: 'light' })
+  theme: string;
+
+  @Column({ name: 'notifications_enabled', default: true })
+  notificationsEnabled: boolean;
+
+  @Column({ name: 'email_notifications', default: true })
+  emailNotifications: boolean;
+
+  @Column({ name: 'push_notifications', default: true })
+  pushNotifications: boolean;
+
+  @Column({ name: 'email_frequency', default: 'daily' })
+  emailFrequency: string;
+
+  // Status
   @Column({ name: 'is_active', default: false })
   isActive: boolean;
 
   @Column({ name: 'is_email_verified', default: false })
   isEmailVerified: boolean;
 
+  // Auth tokens
   @Column({ type: 'varchar', name: 'password_reset_token', nullable: true })
   passwordResetToken: string | null;
 
@@ -56,6 +103,10 @@ export class User {
 
   @Column({ type: 'varchar', name: 'refresh_token', nullable: true })
   refreshToken: string | null;
+
+  // QR Stats
+  @Column({ name: 'qr_scans', default: 0 })
+  qrScans: number;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

@@ -131,6 +131,112 @@ export class UsersService {
     });
   }
 
+  async getProfileResponse(userId: string) {
+    const user = await this.findById(userId);
+    return {
+      success: true,
+      data: {
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        businessName: user.businessName,
+        businessCategory: user.businessCategory,
+        businessAddress: user.businessAddress,
+        businessPhone: user.businessPhone,
+        businessEmail: user.businessEmail,
+        logo: user.logo,
+        avatar: user.avatar,
+        language: user.language,
+        theme: user.theme,
+        notificationsEnabled: user.notificationsEnabled,
+        emailNotifications: user.emailNotifications,
+        pushNotifications: user.pushNotifications,
+        verifiedEmail: user.isEmailVerified,
+        createdAt: user.createdAt.toISOString(),
+        updatedAt: user.updatedAt.toISOString(),
+      },
+    };
+  }
+
+  async updateProfile(userId: string, dto: any) {
+    const user = await this.findById(userId);
+    Object.assign(user, dto);
+    await this.userRepository.save(user);
+
+    return {
+      success: true,
+      data: {
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        businessName: user.businessName,
+        avatar: user.avatar,
+        updatedAt: new Date().toISOString(),
+      },
+      message: 'Profile updated successfully',
+    };
+  }
+
+  async updateBusinessInfo(userId: string, dto: any) {
+    const user = await this.findById(userId);
+    Object.assign(user, dto);
+    await this.userRepository.save(user);
+
+    return {
+      success: true,
+      data: {
+        id: user.id,
+        businessName: user.businessName,
+        businessCategory: user.businessCategory,
+        businessAddress: user.businessAddress,
+        businessPhone: user.businessPhone,
+        businessEmail: user.businessEmail,
+        logo: user.logo,
+        updatedAt: new Date().toISOString(),
+      },
+      message: 'Business information updated successfully',
+    };
+  }
+
+  async updateSettings(userId: string, dto: any) {
+    const user = await this.findById(userId);
+    Object.assign(user, dto);
+    await this.userRepository.save(user);
+
+    return {
+      success: true,
+      data: {
+        userId: user.id,
+        language: user.language,
+        theme: user.theme,
+        notificationsEnabled: user.notificationsEnabled,
+        emailNotifications: user.emailNotifications,
+        pushNotifications: user.pushNotifications,
+        emailFrequency: user.emailFrequency,
+        updatedAt: new Date().toISOString(),
+      },
+      message: 'Settings updated successfully',
+    };
+  }
+
+  async getSettingsResponse(userId: string) {
+    const user = await this.findById(userId);
+    return {
+      success: true,
+      data: {
+        userId: user.id,
+        language: user.language,
+        theme: user.theme,
+        notificationsEnabled: user.notificationsEnabled,
+        emailNotifications: user.emailNotifications,
+        pushNotifications: user.pushNotifications,
+        emailFrequency: user.emailFrequency,
+      },
+    };
+  }
+
   private generateUniqueCode(): string {
     return uuidv4().replace(/-/g, '').substring(0, 8).toUpperCase();
   }
