@@ -78,7 +78,15 @@ Most endpoints require a Bearer token. Login with your credentials to get an acc
 - 📈 **Business Stats**: View specific business performance
 - 📢 **Manual Notifications**: Send custom notifications to users
 - 📣 **Broadcast**: Send announcements to all users
-- 🔔 **Password Alerts**: Notified when business owners change passwords- 📱 **QR Code Management**: View, track, and regenerate business QR codes
+- 🔔 **Password Alerts**: Notified when business owners change passwords
+- 📱 **QR Code Management**: View, track, and regenerate business QR codes
+- 📧 **Join Request Alerts**: Automatic email notification when new businesses apply
+
+### 📝 Join Request Flow
+1. **Business submits request** → Admin receives email notification at hello.opinor@workmail.com
+2. **Admin reviews** → Approves or rejects the request
+3. **If approved** → Business receives invitation code via email
+4. **Business registers** → Uses invitation code to complete sign-up
 ### 🔔 Notification Types
 | Type | Description |
 |------|-------------|
