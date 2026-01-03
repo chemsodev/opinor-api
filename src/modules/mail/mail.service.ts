@@ -13,6 +13,7 @@ export class MailService {
     'https://api.emailjs.com/api/v1.0/email/send';
   private readonly serviceId: string;
   private readonly templateId: string;
+  private readonly joinRequestTemplateId: string;
   private readonly publicKey: string;
   private readonly privateKey: string;
 
@@ -21,13 +22,15 @@ export class MailService {
       this.configService.get<string>('mail.emailjsServiceId') || '';
     this.templateId =
       this.configService.get<string>('mail.emailjsTemplateId') || '';
+    this.joinRequestTemplateId =
+      this.configService.get<string>('mail.emailjsJoinRequestTemplateId') || '';
     this.publicKey =
       this.configService.get<string>('mail.emailjsPublicKey') || '';
     this.privateKey =
       this.configService.get<string>('mail.emailjsPrivateKey') || '';
 
     this.logger.log(
-      `EmailJS config: serviceId=${this.serviceId ? this.serviceId.substring(0, 8) + '***' : 'NOT SET'}, templateId=${this.templateId ? this.templateId.substring(0, 8) + '***' : 'NOT SET'}, privateKey=${this.privateKey ? 'SET' : 'NOT SET'}`,
+      `EmailJS config: serviceId=${this.serviceId ? this.serviceId.substring(0, 8) + '***' : 'NOT SET'}, templateId=${this.templateId ? this.templateId.substring(0, 8) + '***' : 'NOT SET'}, joinRequestTemplateId=${this.joinRequestTemplateId ? this.joinRequestTemplateId.substring(0, 8) + '***' : 'NOT SET'}, privateKey=${this.privateKey ? 'SET' : 'NOT SET'}`,
     );
   }
 
@@ -74,10 +77,12 @@ export class MailService {
    */
   private async sendEmailJS(
     templateParams: Record<string, string>,
+    customTemplateId?: string,
   ): Promise<EmailJSResponse> {
+    const templateId = customTemplateId || this.templateId;
     try {
       this.logger.log(
-        `Sending email via EmailJS to ${templateParams.to_email}...`,
+        `Sending email via EmailJS to ${templateParams.to_email} using template ${templateId}...`,
       );
 
       const response = await fetch(this.emailjsApiUrl, {
@@ -87,7 +92,7 @@ export class MailService {
         },
         body: JSON.stringify({
           service_id: this.serviceId,
-          template_id: this.templateId,
+          template_id: templateId,
           user_id: this.publicKey,
           accessToken: this.privateKey, // Required for server-side requests
           template_params: templateParams,
@@ -105,6 +110,60 @@ export class MailService {
     } catch (error) {
       this.logger.error(`Failed to send email via EmailJS: ${error.message}`);
       throw error;
+    }
+  }
+
+  /**
+   * Send admin notification email when a new join request is submitted
+   * Uses a dedicated EmailJS template for join request notifications
+   *
+   * Template variables:
+   * - to_email: Admin email address
+   * - business_name: Name of the business requesting to join
+   * - requester_email: Email of the person making the request
+   * - phone_number: Phone number (optional)
+   * - business_type: Type of business (optional)
+   * - address: Business address (optional)
+   * - submitted_at: Date/time of submission
+   */
+  async sendAdminNotification(
+    adminEmail: string,
+    joinRequestData: {
+      email: string;
+      businessName: string;
+      businessType?: string;
+      phoneNumber?: string;
+      address?: string;
+    },
+  ): Promise<void> {
+    const templateParams = {
+      to_email: adminEmail,
+      business_name: joinRequestData.businessName,
+      requester_email: joinRequestData.email,
+      phone_number: joinRequestData.phoneNumber || 'Not provided',
+      business_type: joinRequestData.businessType || 'Not specified',
+      address: joinRequestData.address || 'Not provided',
+      submitted_at: new Date().toLocaleString('en-US', {
+        weekday: 'long',
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true,
+      }),
+    };
+
+    try {
+      // Use dedicated join request template if configured, otherwise fall back to default
+      const templateId = this.joinRequestTemplateId || this.templateId;
+      await this.sendEmailJS(templateParams, templateId);
+      this.logger.log(
+        `Admin notification sent to ${adminEmail} for new join request from ${joinRequestData.email}`,
+      );
+    } catch (error) {
+      this.logger.warn(`Failed to send admin notification: ${error.message}`);
+      // Don't throw - admin notification failure shouldn't block the join request
     }
   }
 }

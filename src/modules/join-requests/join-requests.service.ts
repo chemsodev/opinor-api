@@ -152,6 +152,7 @@ export class JoinRequestsService {
   /**
    * Send join request emails in background (non-blocking)
    * Note: We no longer send the code on creation, only on approval
+   * Admin gets notified about new join requests
    */
   private async sendJoinRequestEmails(
     dto: CreateJoinRequestDto,
@@ -160,6 +161,16 @@ export class JoinRequestsService {
     console.log(
       `[JoinRequests] New join request from ${dto.email} (${dto.businessName})`,
     );
+
+    // Notify admin about new join request
+    const adminEmail = 'hello.opinor@workmail.com';
+    await this.mailService.sendAdminNotification(adminEmail, {
+      email: dto.email,
+      businessName: dto.businessName,
+      businessType: dto.businessType,
+      phoneNumber: dto.phone,
+      address: dto.address,
+    });
   }
 
   /**
