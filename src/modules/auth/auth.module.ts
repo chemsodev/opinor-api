@@ -8,7 +8,6 @@ import { JwtStrategy, AdminJwtStrategy } from './strategies';
 import { UsersModule } from '../users/users.module';
 import { AdminModule } from '../admin/admin.module';
 import { JoinRequestsModule } from '../join-requests/join-requests.module';
-import { MailModule } from '../mail/mail.module';
 import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
@@ -27,7 +26,6 @@ import { NotificationsModule } from '../notifications/notifications.module';
     UsersModule,
     forwardRef(() => AdminModule),
     forwardRef(() => JoinRequestsModule),
-    MailModule,
     NotificationsModule,
   ],
   controllers: [AuthController],

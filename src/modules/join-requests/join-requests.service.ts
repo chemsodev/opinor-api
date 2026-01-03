@@ -9,7 +9,6 @@ import { Repository } from 'typeorm';
 import { JoinRequest, JoinRequestStatus } from '../../database/entities';
 import { CreateJoinRequestDto, ReviewJoinRequestDto } from './dto';
 import { MailService } from '../mail/mail.service';
-import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
 export class JoinRequestsService {
@@ -54,8 +53,8 @@ export class JoinRequestsService {
 
     const savedRequest = await this.joinRequestRepository.save(joinRequest);
 
-    // Send emails in background (don't block the response)
-    this.sendJoinRequestEmails(createJoinRequestDto, generatedCode);
+    // Log the request (no email sent to user until approved)
+    this.sendJoinRequestEmails(createJoinRequestDto);
 
     return savedRequest;
   }
@@ -146,39 +145,25 @@ export class JoinRequestsService {
   }
 
   private generateCode(): string {
-    return uuidv4().replace(/-/g, '').substring(0, 8).toUpperCase();
+    // Generate 6-digit numeric invitation code (OTP style)
+    return Math.floor(100000 + Math.random() * 900000).toString();
   }
 
   /**
    * Send join request emails in background (non-blocking)
+   * Note: We no longer send the code on creation, only on approval
    */
   private async sendJoinRequestEmails(
     dto: CreateJoinRequestDto,
-    generatedCode: string,
   ): Promise<void> {
-    try {
-      await this.mailService.sendJoinRequestConfirmation(
-        dto.email,
-        dto.businessName,
-        generatedCode,
-      );
-      await this.mailService.sendNewJoinRequestNotification(
-        dto.businessName,
-        dto.email,
-        dto.businessType,
-        generatedCode,
-      );
-    } catch (error) {
-      // Email failed but request was created - log and continue
-      console.warn(
-        `[JoinRequests] Email sending failed for ${dto.email}:`,
-        error.message,
-      );
-    }
+    // Log the join request creation (no email sent to user at this stage)
+    console.log(
+      `[JoinRequests] New join request from ${dto.email} (${dto.businessName})`,
+    );
   }
 
   /**
-   * Send review notification email in background (non-blocking)
+   * Send invitation code email when join request is approved
    */
   private async sendReviewEmail(
     joinRequest: JoinRequest,
@@ -186,16 +171,19 @@ export class JoinRequestsService {
   ): Promise<void> {
     try {
       if (reviewDto.status === JoinRequestStatus.APPROVED) {
-        await this.mailService.sendJoinRequestApproved(
+        // Send invitation code via EmailJS OTP template
+        await this.mailService.sendInvitationCode(
           joinRequest.email,
-          joinRequest.businessName,
           joinRequest.generatedCode,
+          1440, // 24 hours validity
+        );
+        console.log(
+          `[JoinRequests] Invitation code sent to ${joinRequest.email}`,
         );
       } else if (reviewDto.status === JoinRequestStatus.REJECTED) {
-        await this.mailService.sendJoinRequestRejected(
-          joinRequest.email,
-          joinRequest.businessName,
-          reviewDto.rejectionReason,
+        // Log rejection (could add a rejection email template later)
+        console.log(
+          `[JoinRequests] Join request rejected for ${joinRequest.email}: ${reviewDto.rejectionReason || 'No reason provided'}`,
         );
       }
     } catch (error) {

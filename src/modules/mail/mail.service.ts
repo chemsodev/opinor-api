@@ -1,205 +1,110 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import * as nodemailer from 'nodemailer';
-import { Transporter } from 'nodemailer';
+
+interface EmailJSResponse {
+  status: number;
+  text: string;
+}
 
 @Injectable()
 export class MailService {
   private readonly logger = new Logger(MailService.name);
-  private transporter: Transporter;
+  private readonly emailjsApiUrl =
+    'https://api.emailjs.com/api/v1.0/email/send';
+  private readonly serviceId: string;
+  private readonly templateId: string;
+  private readonly publicKey: string;
+  private readonly privateKey: string;
 
   constructor(private configService: ConfigService) {
-    const mailHost = this.configService.get('mail.host');
-    const mailPort = this.configService.get('mail.port') || 465;
-    const mailUser = this.configService.get('mail.user');
-    const mailPass = this.configService.get('mail.password');
-
-    // Use secure connection (SSL) for port 465, TLS for 587
-    const isSecure = mailPort === 465;
+    this.serviceId =
+      this.configService.get<string>('mail.emailjsServiceId') || '';
+    this.templateId =
+      this.configService.get<string>('mail.emailjsTemplateId') || '';
+    this.publicKey =
+      this.configService.get<string>('mail.emailjsPublicKey') || '';
+    this.privateKey =
+      this.configService.get<string>('mail.emailjsPrivateKey') || '';
 
     this.logger.log(
-      `Mail config: host=${mailHost}, port=${mailPort}, secure=${isSecure}, user=${mailUser ? mailUser.substring(0, 5) + '***' : 'NOT SET'}`,
+      `EmailJS config: serviceId=${this.serviceId ? this.serviceId.substring(0, 8) + '***' : 'NOT SET'}, templateId=${this.templateId ? this.templateId.substring(0, 8) + '***' : 'NOT SET'}, privateKey=${this.privateKey ? 'SET' : 'NOT SET'}`,
     );
-
-    this.transporter = nodemailer.createTransport({
-      host: mailHost,
-      port: mailPort,
-      secure: isSecure,
-      auth: {
-        user: mailUser,
-        pass: mailPass,
-      },
-      // Add timeout to prevent hanging
-      connectionTimeout: 10000,
-      greetingTimeout: 10000,
-      socketTimeout: 10000,
-    });
   }
 
-  private async sendMail(
-    to: string,
-    subject: string,
-    html: string,
+  /**
+   * Generate a 6-digit numeric OTP/invitation code
+   */
+  generateInvitationCode(): string {
+    return Math.floor(100000 + Math.random() * 900000).toString();
+  }
+
+  /**
+   * Send invitation code (OTP) email using EmailJS when join request is approved
+   * This code allows the user to complete their registration/sign up
+   */
+  async sendInvitationCode(
+    email: string,
+    invitationCode: string,
+    validityMinutes: number = 1440, // 24 hours default for invitation codes
   ): Promise<void> {
+    const expiryTime = new Date(Date.now() + validityMinutes * 60 * 1000);
+    const formattedExpiry = expiryTime.toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false,
+    });
+
+    const templateParams = {
+      to_email: email,
+      otp_code: invitationCode,
+      validity_minutes: validityMinutes.toString(),
+      expiry_time: formattedExpiry,
+    };
+
+    await this.sendEmailJS(templateParams);
+    this.logger.log(`Invitation code email sent to ${email}`);
+  }
+
+  /**
+   * Send email using EmailJS REST API
+   */
+  private async sendEmailJS(
+    templateParams: Record<string, string>,
+  ): Promise<EmailJSResponse> {
     try {
-      this.logger.log(`Attempting to send email to ${to}...`);
-      const info = await this.transporter.sendMail({
-        from: this.configService.get('mail.from'),
-        to,
-        subject,
-        html,
-      });
       this.logger.log(
-        `Email sent to ${to}: ${subject} (messageId: ${info.messageId})`,
+        `Sending email via EmailJS to ${templateParams.to_email}...`,
       );
+
+      const response = await fetch(this.emailjsApiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          service_id: this.serviceId,
+          template_id: this.templateId,
+          user_id: this.publicKey,
+          accessToken: this.privateKey, // Required for server-side requests
+          template_params: templateParams,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`EmailJS API error: ${response.status} - ${errorText}`);
+      }
+
+      const result = { status: response.status, text: await response.text() };
+      this.logger.log(`EmailJS response: ${result.status} - ${result.text}`);
+      return result;
     } catch (error) {
-      this.logger.error(`Failed to send email to ${to}: ${error.message}`);
+      this.logger.error(`Failed to send email via EmailJS: ${error.message}`);
       throw error;
     }
-  }
-
-  async sendJoinRequestConfirmation(
-    email: string,
-    businessName: string,
-    code: string,
-  ): Promise<void> {
-    const html = `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h1 style="color: #333;">Welcome to Opinor!</h1>
-        <p>Dear ${businessName},</p>
-        <p>Thank you for submitting your join request. We have received your application and our team is currently reviewing it.</p>
-        <p>Your reference code is: <strong>${code}</strong></p>
-        <p>You will receive an email notification once your application has been reviewed.</p>
-        <br>
-        <p>Best regards,</p>
-        <p>The Opinor Team</p>
-      </div>
-    `;
-    await this.sendMail(email, 'Opinor - Join Request Received', html);
-  }
-
-  async sendNewJoinRequestNotification(
-    businessName: string,
-    email: string,
-    businessType: string,
-    code: string,
-  ): Promise<void> {
-    const adminEmail = this.configService.get('mail.adminNotificationEmail');
-    const html = `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h1 style="color: #333;">New Join Request</h1>
-        <p>A new business has submitted a join request:</p>
-        <ul>
-          <li><strong>Business Name:</strong> ${businessName}</li>
-          <li><strong>Email:</strong> ${email}</li>
-          <li><strong>Business Type:</strong> ${businessType}</li>
-          <li><strong>Code:</strong> ${code}</li>
-        </ul>
-        <p>Please review this request in the admin dashboard.</p>
-      </div>
-    `;
-    await this.sendMail(adminEmail, 'Opinor - New Join Request', html);
-  }
-
-  async sendJoinRequestApproved(
-    email: string,
-    businessName: string,
-    code: string,
-  ): Promise<void> {
-    const frontendUrl = this.configService.get('app.frontendUrl');
-    const registrationLink = `${frontendUrl}/register?code=${code}`;
-    const html = `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h1 style="color: #333;">Your Application Has Been Approved!</h1>
-        <p>Dear ${businessName},</p>
-        <p>We are pleased to inform you that your application to join Opinor has been approved.</p>
-        <p>To complete your registration, please click the link below:</p>
-        <p>
-          <a href="${registrationLink}" style="display: inline-block; padding: 12px 24px; background-color: #007bff; color: white; text-decoration: none; border-radius: 4px;">
-            Complete Registration
-          </a>
-        </p>
-        <p>Or copy this link: ${registrationLink}</p>
-        <p>Your invitation code: <strong>${code}</strong></p>
-        <br>
-        <p>Best regards,</p>
-        <p>The Opinor Team</p>
-      </div>
-    `;
-    await this.sendMail(email, 'Opinor - Application Approved', html);
-  }
-
-  async sendJoinRequestRejected(
-    email: string,
-    businessName: string,
-    reason?: string,
-  ): Promise<void> {
-    const html = `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h1 style="color: #333;">Application Status Update</h1>
-        <p>Dear ${businessName},</p>
-        <p>We regret to inform you that your application to join Opinor has not been approved at this time.</p>
-        ${reason ? `<p><strong>Reason:</strong> ${reason}</p>` : ''}
-        <p>If you have any questions, please contact our support team.</p>
-        <br>
-        <p>Best regards,</p>
-        <p>The Opinor Team</p>
-      </div>
-    `;
-    await this.sendMail(email, 'Opinor - Application Status Update', html);
-  }
-
-  async sendWelcomeEmail(
-    email: string,
-    businessName: string,
-    uniqueCode: string,
-  ): Promise<void> {
-    const reviewPageUrl = this.configService.get('app.reviewPageUrl');
-    const reviewLink = `${reviewPageUrl}/${uniqueCode}`;
-    const html = `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h1 style="color: #333;">Welcome to Opinor!</h1>
-        <p>Dear ${businessName},</p>
-        <p>Your account has been successfully created. You can now start collecting customer feedback!</p>
-        <p>Your unique review page link: <a href="${reviewLink}">${reviewLink}</a></p>
-        <p>Share this link or generate a QR code to let your customers leave reviews.</p>
-        <br>
-        <h2>Getting Started:</h2>
-        <ol>
-          <li>Log in to the Opinor mobile app</li>
-          <li>Print your QR code from the dashboard</li>
-          <li>Place it where customers can see it</li>
-          <li>Start receiving feedback!</li>
-        </ol>
-        <br>
-        <p>Best regards,</p>
-        <p>The Opinor Team</p>
-      </div>
-    `;
-    await this.sendMail(email, 'Welcome to Opinor!', html);
-  }
-
-  async sendPasswordResetEmail(email: string, token: string): Promise<void> {
-    const frontendUrl = this.configService.get('app.frontendUrl');
-    const resetLink = `${frontendUrl}/reset-password?token=${token}`;
-    const html = `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h1 style="color: #333;">Password Reset Request</h1>
-        <p>You have requested to reset your password.</p>
-        <p>Click the link below to reset your password:</p>
-        <p>
-          <a href="${resetLink}" style="display: inline-block; padding: 12px 24px; background-color: #007bff; color: white; text-decoration: none; border-radius: 4px;">
-            Reset Password
-          </a>
-        </p>
-        <p>Or copy this link: ${resetLink}</p>
-        <p>This link will expire in 1 hour.</p>
-        <p>If you did not request this, please ignore this email.</p>
-        <br>
-        <p>Best regards,</p>
-        <p>The Opinor Team</p>
-      </div>
-    `;
-    await this.sendMail(email, 'Opinor - Password Reset', html);
   }
 }

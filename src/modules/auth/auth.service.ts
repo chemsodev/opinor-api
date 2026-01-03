@@ -11,7 +11,6 @@ import { v4 as uuidv4 } from 'uuid';
 import { UsersService } from '../users/users.service';
 import { AdminService } from '../admin/admin.service';
 import { JoinRequestsService } from '../join-requests/join-requests.service';
-import { MailService } from '../mail/mail.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import {
   LoginDto,
@@ -30,7 +29,6 @@ export class AuthService {
     private readonly joinRequestsService: JoinRequestsService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
-    private readonly mailService: MailService,
     private readonly notificationsService: NotificationsService,
   ) {}
 
@@ -138,39 +136,27 @@ export class AuthService {
       throw new BadRequestException('Invitation code has already been used');
     }
 
-    // Check if email matches the join request
-    if (joinRequest.email !== registerDto.email) {
-      throw new BadRequestException('Email does not match the invitation');
-    }
-
-    // Check if user already exists
-    const existingUser = await this.usersService.findByEmail(registerDto.email);
+    // Check if user already exists with the email from join request
+    const existingUser = await this.usersService.findByEmail(joinRequest.email);
     if (existingUser) {
       throw new ConflictException('Email already registered');
     }
 
-    // Create the user
+    // Create the user using data from the approved join request
     const user = await this.usersService.create({
-      email: registerDto.email,
+      email: joinRequest.email,
       password: registerDto.password,
-      businessName: registerDto.businessName,
-      businessType: registerDto.businessType,
-      phone: registerDto.phone,
-      address: registerDto.address,
+      businessName: joinRequest.businessName,
+      businessType: joinRequest.businessType,
+      phone: joinRequest.phone,
+      address: joinRequest.address,
     });
 
     // Mark the code as used
     await this.joinRequestsService.markCodeAsUsed(registerDto.code);
 
-    // Send welcome email (non-blocking)
-    this.mailService
-      .sendWelcomeEmail(user.email, user.businessName, user.uniqueCode)
-      .catch((err) =>
-        console.warn(
-          `[Auth] Welcome email failed for ${user.email}:`,
-          err.message,
-        ),
-      );
+    // Log successful registration
+    console.log(`[Auth] User registered successfully: ${user.email}`);
 
     const tokens = await this.generateTokens(user.id, user.email, 'user');
     await this.usersService.updateRefreshToken(user.id, tokens.refreshToken);
@@ -244,17 +230,8 @@ export class AuthService {
     const resetToken = uuidv4();
     await this.usersService.setPasswordResetToken(user.email, resetToken);
 
-    // Send email in background (non-blocking)
-    this.mailService
-      .sendPasswordResetEmail(user.email, resetToken)
-      .catch((err) =>
-        console.warn(
-          `[Auth] Password reset email failed for ${user.email}:`,
-          err.message,
-        ),
-      );
-
-    // DEV ONLY: Log token for testing (remove in production!)
+    // TODO: Implement password reset email via EmailJS or another service
+    // For now, log the token for development/testing
     console.log(`[DEV] Password reset token for ${user.email}: ${resetToken}`);
 
     return {
